@@ -14,16 +14,17 @@ This implementation plan breaks down the Appointment Booking System into discret
     - Configure TypeScript configurations for both projects
     - _Requirements: Foundation for all system components_
 
-  - [ ] 1.2 Set up PostgreSQL database and migrations
-    - Create database schema with all tables (users, clients, staff, services, appointments, service_assignments, audit_logs)
-    - Implement database migration system using Knex.js
+  - [ ] 1.2 Set up Supabase database and migrations
+    - Create Supabase project and configure database
+    - Set up database schema with all tables (users, clients, staff, services, appointments, service_assignments, audit_logs)
+    - Implement database migration system using Knex.js with Supabase connection
+    - Configure Row Level Security (RLS) policies for data protection
     - Add database indexes for performance optimization
-    - Create database connection pooling configuration
     - _Requirements: 9.1, 9.2, 9.3_
 
   - [ ]* 1.3 Write database schema validation tests
-    - Test table creation and constraints
-    - Test foreign key relationships
+    - Test table creation and constraints on Supabase
+    - Test foreign key relationships and RLS policies
     - Test index creation and performance
     - _Requirements: 9.1_
 
@@ -217,9 +218,10 @@ This implementation plan breaks down the Appointment Booking System into discret
 - [ ] 12. React Frontend Foundation
   - [ ] 12.1 Set up React application structure
     - Create React app with TypeScript and routing
-    - Set up Material-UI theme for government styling
+    - Set up shadcn/ui and Tailwind CSS for styling
     - Configure Axios for API communication
     - Create authentication context and hooks
+    - Configure Supabase client for real-time features
     - _Requirements: Foundation for all UI requirements_
 
   - [ ] 12.2 Implement authentication components
@@ -341,10 +343,32 @@ This implementation plan breaks down the Appointment Booking System into discret
     - Implement rate limiting and input sanitization
     - _Requirements: Security and performance across all requirements_
 
-- [ ] 18. Final Checkpoint - System Complete
-  - Ensure all functionality works end-to-end
+- [ ] 18. Deployment and Production Setup
+  - [ ] 18.1 Configure Vercel deployment for frontend
+    - Set up Vercel project and environment variables
+    - Configure build settings and deployment pipeline
+    - Set up custom domain and SSL certificates
+    - _Requirements: Production deployment_
+
+  - [ ] 18.2 Configure backend deployment
+    - Set up backend hosting (Vercel Functions, Railway, or Render)
+    - Configure production environment variables
+    - Set up database connection to Supabase production instance
+    - Configure email service for production
+    - _Requirements: Production deployment_
+
+  - [ ] 18.3 Production security and monitoring
+    - Configure CORS for production domains
+    - Set up error monitoring and logging
+    - Configure rate limiting for production
+    - Set up backup and monitoring for Supabase
+    - _Requirements: Security and monitoring_
+
+- [ ] 19. Final Checkpoint - System Complete
+  - Ensure all functionality works end-to-end in production
   - Verify all requirements are implemented and tested
   - Run complete test suite and ensure all tests pass
+  - Verify Vercel deployment and Supabase integration
   - Ask the user if questions arise about final system integration
 
 ## Notes
@@ -354,5 +378,7 @@ This implementation plan breaks down the Appointment Booking System into discret
 - Property tests validate universal correctness properties across the system
 - Unit tests validate specific examples, edge cases, and error conditions
 - Checkpoints ensure incremental validation and provide opportunities for user feedback
-- The implementation follows a bottom-up approach: database → services → APIs → frontend
+- The implementation follows a bottom-up approach: Supabase setup → services → APIs → frontend → Vercel deployment
 - All components integrate incrementally to ensure no orphaned code
+- Supabase provides real-time features and built-in authentication that can enhance the system
+- Vercel deployment enables easy scaling and global CDN distribution

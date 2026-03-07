@@ -29,8 +29,9 @@ graph TB
     end
     
     subgraph "Data Layer"
-        DB[(PostgreSQL Database)]
+        SUPABASE[(Supabase PostgreSQL)]
         EMAIL[Email Service Provider]
+        VERCEL[Vercel Hosting]
     end
     
     WEB --> REACT
@@ -42,20 +43,22 @@ graph TB
     API --> NOTIFY
     API --> AUDIT
     API --> TRACKER
-    AUTH --> DB
-    CALENDAR --> DB
+    AUTH --> SUPABASE
+    CALENDAR --> SUPABASE
     NOTIFY --> EMAIL
-    AUDIT --> DB
-    TRACKER --> DB
+    AUDIT --> SUPABASE
+    TRACKER --> SUPABASE
+    REACT --> VERCEL
 ```
 
 ### Technology Stack
 
 **Frontend:**
-- React 18 with TypeScript for type safety
+- React 17 with TypeScript for type safety and stability
+- shadcn/ui for modern, accessible component library
+- Tailwind CSS for utility-first styling
 - React Router for client-side routing
 - Axios for API communication
-- Material-UI for consistent government-appropriate styling
 - React Hook Form for form validation
 
 **Backend:**
@@ -65,13 +68,17 @@ graph TB
 - bcrypt for password hashing
 - node-cron for scheduled tasks
 - Joi for request validation
+- Supabase client for database operations
 
 **Database:**
-- PostgreSQL 14+ for relational data storage
+- Supabase (PostgreSQL) for relational data storage with real-time features
 - Database migrations with Knex.js
-- Connection pooling for performance
+- Row Level Security (RLS) for data protection
+- Real-time subscriptions for live updates
 
 **Infrastructure:**
+- Vercel for frontend hosting and deployment
+- Supabase for database hosting and authentication
 - Email service integration (SendGrid or similar)
 - Environment-based configuration
 - Structured logging with Winston
