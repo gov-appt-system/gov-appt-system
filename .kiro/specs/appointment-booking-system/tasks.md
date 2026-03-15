@@ -10,13 +10,14 @@ This implementation plan breaks down the Appointment Booking System into discret
   - [ ] 1.1 Initialize project structure and dependencies
     - Create backend Node.js/Express project with TypeScript
     - Create frontend React project with TypeScript
-    - Set up package.json files with required dependencies
+    - Set up pnpm workspace with pnpm-workspace.yaml
+    - Configure package.json files with required dependencies
     - Configure TypeScript configurations for both projects
     - _Requirements: Foundation for all system components_
 
   - [ ] 1.2 Set up Supabase database and migrations
     - Create Supabase project and configure database
-    - Set up database schema with all tables (users, clients, staff, services, appointments, service_assignments, audit_logs)
+    - Set up database schema with all tables (users, clients, staff_profiles, admin_profiles, services, appointments, service_assignments, audit_logs)
     - Implement database migration system using Knex.js with Supabase connection
     - Configure Row Level Security (RLS) policies for data protection
     - Add database indexes for performance optimization
@@ -133,8 +134,9 @@ This implementation plan breaks down the Appointment Booking System into discret
   - [ ] 7.1 Create client account management endpoints
     - Implement GET /api/clients/profile for profile viewing
     - Create PUT /api/clients/profile for profile updates
+    - Implement POST /api/clients/profile/change-password to verify current password, enforce complexity, and update hash
     - Implement account deactivation with history preservation
-    - _Requirements: 5.1, 5.2, 5.3_
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
   - [ ] 7.2 Create staff and admin management endpoints
     - Implement POST /api/admin/users for account creation
@@ -158,10 +160,13 @@ This implementation plan breaks down the Appointment Booking System into discret
     - _Requirements: 7.1, 7.2, 7.3, 7.4_
 
   - [ ] 8.2 Implement service assignment management
-    - Create POST /api/services/:id/assignments for staff assignments
-    - Implement service-specific access control validation
+    - Create POST /api/services/:id/assignments to assign a staff-level account to a service (manager only)
+    - Create GET /api/services/:id/assignments to list all staff assigned to a service (manager view)
+    - Create DELETE /api/services/:id/assignments/:staffId to remove a staff assignment (manager only)
+    - Enforce that only accounts with role = 'staff' may be assigned (reject manager/admin/client)
+    - Implement service-specific access control validation using manager_staff_overview view
     - Create assignment history tracking
-    - _Requirements: 6.5, 7.1_
+    - _Requirements: 6.5, 6.6, 6.7, 7.1_
 
   - [ ]* 8.3 Write property tests for service management
     - **Property 18: Service parameters are consistently applied to booking calendar**

@@ -2,15 +2,15 @@
 
 ## Introduction
 
-The Appointment Booking System is a web-based application that automates appointment scheduling, confirmation, and tracking for government agencies. The system supports three user roles (Admin, Staff, and Client) with secure authentication, role-based access control, and comprehensive appointment management capabilities including real-time availability checking, automated notifications, and audit logging.
+The Appointment Booking System is a web-based application that automates appointment scheduling, confirmation, and tracking for government agencies. The system supports four user roles (Admin, Manager, Staff, and Client) with secure authentication, role-based access control, and comprehensive appointment management capabilities including real-time availability checking, automated notifications, and audit logging.
 
 ## Glossary
 
 - **System**: The Appointment Booking System
-- **Client**: Filipino citizens who book appointments and track requests
-- **Staff**: Government agency employees who manage appointment requests and update statuses
-- **Admin**: System administrators who oversee activities, manage users and services, and generate reports
-- **Manager**: Staff members with elevated privileges to manage services and assign staff
+- **Client**: Filipino citizens who self-register, book appointments, and track their requests
+- **Staff**: Government agency employees who process appointment requests and update statuses for their assigned services
+- **Manager**: Staff members with elevated privileges who create/configure services, assign staff to services, and oversee appointment workflows; shares the `staff_profiles` table, distinguished by `role = 'manager'`
+- **Admin**: System administrators who manage all user accounts (staff, managers, clients), view audit logs, and generate reports; stored in `admin_profiles`
 - **Appointment_Tracker**: Component that generates and manages unique appointment tracking numbers
 - **Calendar_Service**: Component that manages real-time availability and prevents double booking
 - **Notification_Service**: Component that sends email notifications to users
@@ -81,6 +81,8 @@ The Appointment Booking System is a web-based application that automates appoint
 1. WHEN a client accesses their profile, THE System SHALL display current personal information for viewing and editing
 2. WHEN a client updates profile information, THE System SHALL validate and save the changes to their account
 3. WHEN a client requests account deactivation, THE System SHALL deactivate the account while preserving appointment history
+4. WHEN a client submits a password change request with their current password and a new password, THE Authentication_Service SHALL verify the current password, enforce complexity requirements, and update the password hash
+5. WHEN a client provides an incorrect current password during a password change, THE Authentication_Service SHALL reject the request and preserve the existing password
 
 ### Requirement 6: Staff and Manager Account Administration
 
@@ -92,8 +94,10 @@ The Appointment Booking System is a web-based application that automates appoint
 2. WHEN an admin views accounts, THE System SHALL display all manager and staff accounts with their current status and role information
 3. WHEN an admin updates account information, THE System SHALL save the changes and maintain role consistency
 4. WHEN an admin archives an account, THE System SHALL deactivate access while preserving historical records
-5. WHEN a manager assigns staff to services, THE System SHALL create the assignment and enforce service-specific access control
-6. WHEN any account management action occurs, THE Audit_Logger SHALL record the action with admin identification
+5. WHEN a manager assigns a staff-level account to a specific service, THE System SHALL create the service assignment, enforce that only staff-role accounts may be assigned, and grant that staff member operational access to the service's appointment queue
+6. WHEN a manager views staff assignments for a service, THE System SHALL display all currently assigned staff members and their assignment details
+7. WHEN a manager removes a staff assignment, THE System SHALL revoke that staff member's operational access to the service while preserving historical appointment records
+8. WHEN any account management action occurs, THE Audit_Logger SHALL record the action with admin or manager identification
 
 ### Requirement 7: Service Configuration and Management
 

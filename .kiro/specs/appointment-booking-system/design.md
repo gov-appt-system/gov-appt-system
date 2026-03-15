@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Appointment Booking System is a web-based application built with a modern three-tier architecture consisting of a React frontend, Node.js/Express backend API, and PostgreSQL database. The system implements role-based access control (RBAC) with three distinct user roles: Admin, Staff, and Client, each with specific permissions and capabilities.
+The Appointment Booking System is a web-based application built with a modern three-tier architecture consisting of a React frontend, Node.js/Express backend API, and PostgreSQL database. The system implements role-based access control (RBAC) with four distinct user roles: Client, Staff, Manager, and Admin, each with specific permissions and capabilities. Manager is a Staff member with elevated privileges (service configuration, staff assignment); both share the `staff_profiles` table and are distinguished by the `role` column. Admin has a separate `admin_profiles` table for system-wide account and audit management.
 
 The architecture emphasizes security, scalability, and maintainability through clear separation of concerns, comprehensive audit logging, and real-time availability management. The system handles the complete appointment lifecycle from booking through completion, with automated notifications and status tracking throughout the process.
 
@@ -69,6 +69,7 @@ graph TB
 - node-cron for scheduled tasks
 - Joi for request validation
 - Supabase client for database operations
+- pnpm as the package manager
 
 **Database:**
 - Supabase (PostgreSQL) for relational data storage with real-time features
@@ -279,6 +280,7 @@ interface User {
   updatedAt: Date
 }
 
+// Self-registered Filipino citizens who book appointments
 interface Client extends User {
   firstName: string
   lastName: string
@@ -288,18 +290,30 @@ interface Client extends User {
   governmentId: string
 }
 
+// Government employees who process appointments for assigned services
 interface Staff extends User {
   firstName: string
   lastName: string
   employeeId: string
   department: string
-  assignedServices: string[] // Service IDs
+  assignedServices: string[] // Service IDs (populated via service_assignments)
 }
 
+// Staff with elevated privileges: create/configure services, assign staff to services
+// Shares the staff profile table; distinguished by role = 'manager'
+interface Manager extends User {
+  firstName: string
+  lastName: string
+  employeeId: string
+  department: string
+}
+
+// System-wide administrators: manage all accounts, view audit logs, generate reports
 interface Admin extends User {
   firstName: string
   lastName: string
-  adminLevel: number
+  employeeId: string
+  department: string
 }
 ```
 
@@ -377,7 +391,14 @@ interface ServiceAssignment {
 ### Database Schema
 
 ```sql
--- Users table (base table for all user types)
+-- ============================================================
+-- USERS (base identity table for all roles)
+-- role: 'client' | 'staff' | 'manager' | 'admin'
+--   client  → has a row in clients
+--   staff   → has a row in staff_profiles
+--   manager → has a row in staff_profiles (elevated role)
+--   admin   → has a row in admin_profiles
+-- ============================================================
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) UNIQUE NOT NULL,
@@ -388,7 +409,9 @@ CREATE TABLE users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Clients table (extends users)
+-- ============================================================
+-- CLIENTS — self-registered Filipino citizens
+-- ============================================================
 CREATE TABLE clients (
   user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   first_name VARCHAR(100) NOT NULL,
@@ -399,8 +422,12 @@ CREATE TABLE clients (
   government_id VARCHAR(50) NOT NULL
 );
 
--- Staff table (extends users)
-CREATE TABLE staff (
+-- ============================================================
+-- STAFF PROFILES — shared by both 'staff' and 'manager' roles
+-- Managers are distinguished by users.role = 'manager'.
+-- Only managers may create services and assign staff.
+-- ============================================================
+CREATE TABLE staff_profiles (
   user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NOT NULL,
@@ -408,25 +435,42 @@ CREATE TABLE staff (
   department VARCHAR(100) NOT NULL
 );
 
--- Services table
+-- ============================================================
+-- ADMIN PROFILES — system-wide administrators
+-- Created only by other admins (or seeded).
+-- Manage all user accounts, view audit logs, generate reports.
+-- ============================================================
+CREATE TABLE admin_profiles (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  employee_id VARCHAR(50) UNIQUE NOT NULL,
+  department VARCHAR(100) NOT NULL
+);
+
+-- ============================================================
+-- SERVICES — configured by managers
+-- ============================================================
 CREATE TABLE services (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(200) NOT NULL,
   description TEXT,
   department VARCHAR(100) NOT NULL,
-  duration INTEGER NOT NULL, -- minutes
-  capacity INTEGER NOT NULL DEFAULT 1,
+  duration INTEGER NOT NULL,           -- minutes per appointment slot
+  capacity INTEGER NOT NULL DEFAULT 1, -- max concurrent appointments per slot
   start_time TIME NOT NULL,
   end_time TIME NOT NULL,
-  days_of_week INTEGER[] NOT NULL, -- 0-6 array
+  days_of_week INTEGER[] NOT NULL,     -- 0=Sunday … 6=Saturday
   required_documents TEXT[],
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  created_by UUID REFERENCES users(id)
+  created_by UUID REFERENCES users(id) -- must be a manager
 );
 
--- Appointments table
+-- ============================================================
+-- APPOINTMENTS — booked by clients, processed by staff/managers
+-- ============================================================
 CREATE TABLE appointments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tracking_number VARCHAR(20) UNIQUE NOT NULL,
@@ -434,40 +478,50 @@ CREATE TABLE appointments (
   service_id UUID NOT NULL REFERENCES services(id),
   appointment_date_time TIMESTAMP NOT NULL,
   duration INTEGER NOT NULL,
-  status VARCHAR(20) NOT NULL DEFAULT 'pending',
-  personal_details JSONB NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'confirmed', 'completed', 'cancelled', 'no_show')),
+  personal_details JSONB NOT NULL,     -- snapshot of client details at booking time
   required_documents TEXT[],
   remarks TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  processed_by UUID REFERENCES staff(user_id)
+  processed_by UUID REFERENCES staff_profiles(user_id) -- staff or manager who last acted
 );
 
--- Service assignments table
+-- ============================================================
+-- SERVICE ASSIGNMENTS — managers assign staff to services
+-- Both staff and managers may be assigned to a service.
+-- ============================================================
 CREATE TABLE service_assignments (
-  staff_id UUID REFERENCES staff(user_id) ON DELETE CASCADE,
+  staff_id UUID REFERENCES staff_profiles(user_id) ON DELETE CASCADE,
   service_id UUID REFERENCES services(id) ON DELETE CASCADE,
   assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  assigned_by UUID REFERENCES users(id),
+  assigned_by UUID REFERENCES users(id), -- must be a manager
   PRIMARY KEY (staff_id, service_id)
 );
 
--- Audit logs table
+-- ============================================================
+-- AUDIT LOGS — immutable record of all system actions
+-- ============================================================
 CREATE TABLE audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  user_id UUID REFERENCES users(id),
+  user_id UUID REFERENCES users(id),   -- actor (NULL for system events)
   action VARCHAR(100) NOT NULL,
   resource VARCHAR(100) NOT NULL,
   details JSONB,
   ip_address INET
 );
 
--- Indexes for performance
+-- ============================================================
+-- INDEXES
+-- ============================================================
 CREATE INDEX idx_appointments_client_id ON appointments(client_id);
 CREATE INDEX idx_appointments_service_id ON appointments(service_id);
 CREATE INDEX idx_appointments_date_time ON appointments(appointment_date_time);
 CREATE INDEX idx_appointments_tracking_number ON appointments(tracking_number);
+CREATE INDEX idx_appointments_status ON appointments(status);
 CREATE INDEX idx_audit_logs_timestamp ON audit_logs(timestamp);
 CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
+CREATE INDEX idx_users_role ON users(role);
 ```
