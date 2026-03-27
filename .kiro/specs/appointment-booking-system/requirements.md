@@ -11,6 +11,7 @@ The Appointment Booking System is a web-based application that automates appoint
 - **Staff**: Government agency employees who process appointment requests and update statuses for their assigned services
 - **Manager**: Staff members with elevated privileges who create/configure services, assign staff to services, and oversee appointment workflows; shares the `staff_profiles` table, distinguished by `role = 'manager'`
 - **Admin**: System administrators who manage all user accounts (staff, managers, clients), view audit logs, and generate reports; stored in `admin_profiles`
+- **Archive**: A soft-delete operation that sets `archived_at` (and `is_active = false`) on a record, preserving all data and relationships while removing the record from active system use. No records are ever permanently deleted.
 - **Appointment_Tracker**: Component that generates and manages unique appointment tracking numbers
 - **Calendar_Service**: Component that manages real-time availability and prevents double booking
 - **Notification_Service**: Component that sends email notifications to users
@@ -96,7 +97,7 @@ The Appointment Booking System is a web-based application that automates appoint
 4. WHEN an admin archives an account, THE System SHALL deactivate access while preserving historical records
 5. WHEN a manager assigns a staff-level account to a specific service, THE System SHALL create the service assignment, enforce that only staff-role accounts may be assigned, and grant that staff member operational access to the service's appointment queue
 6. WHEN a manager views staff assignments for a service, THE System SHALL display all currently assigned staff members and their assignment details
-7. WHEN a manager removes a staff assignment, THE System SHALL revoke that staff member's operational access to the service while preserving historical appointment records
+7. WHEN a manager removes a staff assignment, THE System SHALL archive the assignment record (setting it inactive) to revoke that staff member's operational access to the service while preserving the historical assignment record
 8. WHEN any account management action occurs, THE Audit_Logger SHALL record the action with admin or manager identification
 
 ### Requirement 7: Service Configuration and Management

@@ -103,6 +103,7 @@ interface AuthenticationService {
   hashPassword(password: string): Promise<string>
   sendPasswordResetEmail(email: string): Promise<void>
   resetPassword(token: string, newPassword: string): Promise<void>
+  changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void>
   
   // User registration
   registerClient(userData: ClientRegistrationData): Promise<User>
@@ -153,6 +154,38 @@ interface Permission {
   actions: string[]
 }
 ```
+
+### Permission Matrix
+
+This table is the single source of truth for RBAC enforcement. Every API route and middleware check must map to one cell in this matrix. `✓` = allowed, `✗` = denied.
+
+| Resource | Action | Client | Staff | Manager | Admin |
+|---|---|:---:|:---:|:---:|:---:|
+| **Auth** | Login / Logout | ✓ | ✓ | ✓ | ✓ |
+| **Auth** | Register (self) | ✓ | ✗ | ✗ | ✗ |
+| **Auth** | Password reset (own) | ✓ | ✓ | ✓ | ✓ |
+| **Own Profile** | View / Edit | ✓ | ✓ | ✓ | ✓ |
+| **Own Profile** | Deactivate (self) | ✓ | ✗ | ✗ | ✗ |
+| **Appointments** | Book (create) | ✓ | ✗ | ✗ | ✗ |
+| **Appointments** | View own | ✓ | ✗ | ✗ | ✗ |
+| **Appointments** | Track by number | ✓ | ✗ | ✗ | ✗ |
+| **Appointments** | View assigned service queue | ✗ | ✓ | ✓ | ✗ |
+| **Appointments** | Update status / remarks | ✗ | ✓ | ✓ | ✗ |
+| **Appointments** | Cancel (own, pending only) | ✓ | ✗ | ✗ | ✗ |
+| **Services** | View active (booking calendar) | ✓ | ✓ | ✓ | ✗ |
+| **Services** | Create / Edit / Archive | ✗ | ✗ | ✓ | ✗ |
+| **Staff Assignments** | Assign staff to service | ✗ | ✗ | ✓ | ✗ |
+| **Staff Assignments** | Remove staff from service | ✗ | ✗ | ✓ | ✗ |
+| **Staff Assignments** | View assignments | ✗ | ✗ | ✓ | ✗ |
+| **User Accounts** | Create staff account | ✗ | ✗ | ✗ | ✓ |
+| **User Accounts** | Create manager account | ✗ | ✗ | ✗ | ✓ |
+| **User Accounts** | View all staff / managers | ✗ | ✗ | ✗ | ✓ |
+| **User Accounts** | Archive staff / manager | ✗ | ✗ | ✗ | ✓ |
+| **User Accounts** | View / manage client accounts | ✗ | ✗ | ✗ | ✓ |
+| **Audit Logs** | View | ✗ | ✗ | ✗ | ✓ |
+| **Audit Logs** | Export | ✗ | ✗ | ✗ | ✓ |
+
+> Note: Admin has no access to Services or Appointments by design. This is an intentional separation — admins govern accounts and audit trails, not operational workflows.
 
 ### Calendar Service
 
@@ -276,6 +309,7 @@ interface User {
   passwordHash: string
   role: UserRole
   isActive: boolean
+  archivedAt: Date | null  // null = active; set on archive (never hard-deleted)
   createdAt: Date
   updatedAt: Date
 }
@@ -331,6 +365,7 @@ interface Appointment {
   personalDetails: PersonalDetails
   requiredDocuments: string[]
   remarks?: string
+  archivedAt: Date | null  // null = active; set when completed/cancelled
   createdAt: Date
   updatedAt: Date
   processedBy?: string // Staff ID
@@ -375,22 +410,37 @@ interface Service {
   operatingHours: ServiceHours
   requiredDocuments: string[]
   isActive: boolean
+  archivedAt: Date | null  // null = active; set on archive
   createdAt: Date
   updatedAt: Date
   createdBy: string // Manager ID
 }
 
 interface ServiceAssignment {
+  id: string
   staffId: string
   serviceId: string
+  isActive: boolean
   assignedAt: Date
-  assignedBy: string // Manager ID
+  assignedBy: string   // Manager ID
+  archivedAt: Date | null  // null = active; set when assignment is removed
+  archivedBy: string | null  // Manager ID who removed the assignment
 }
 ```
 
 ### Database Schema
 
 ```sql
+-- ============================================================
+-- SOFT-DELETE POLICY
+-- No records are ever permanently deleted in this system.
+-- All "deletions" are archives: archived_at is set to the
+-- current timestamp and is_active is set to false.
+-- ON DELETE CASCADE is intentionally omitted; profile rows
+-- remain as historical records even if the parent user row
+-- is archived.
+-- ============================================================
+
 -- ============================================================
 -- USERS (base identity table for all roles)
 -- role: 'client' | 'staff' | 'manager' | 'admin'
@@ -405,6 +455,7 @@ CREATE TABLE users (
   password_hash VARCHAR(255) NOT NULL,
   role VARCHAR(20) NOT NULL CHECK (role IN ('client', 'staff', 'manager', 'admin')),
   is_active BOOLEAN DEFAULT true,
+  archived_at TIMESTAMP DEFAULT NULL,  -- NULL = active; set on archive
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -413,7 +464,7 @@ CREATE TABLE users (
 -- CLIENTS — self-registered Filipino citizens
 -- ============================================================
 CREATE TABLE clients (
-  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID PRIMARY KEY REFERENCES users(id),
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NOT NULL,
   phone_number VARCHAR(20) NOT NULL,
@@ -428,7 +479,7 @@ CREATE TABLE clients (
 -- Only managers may create services and assign staff.
 -- ============================================================
 CREATE TABLE staff_profiles (
-  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID PRIMARY KEY REFERENCES users(id),
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NOT NULL,
   employee_id VARCHAR(50) UNIQUE NOT NULL,
@@ -441,7 +492,7 @@ CREATE TABLE staff_profiles (
 -- Manage all user accounts, view audit logs, generate reports.
 -- ============================================================
 CREATE TABLE admin_profiles (
-  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID PRIMARY KEY REFERENCES users(id),
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NOT NULL,
   employee_id VARCHAR(50) UNIQUE NOT NULL,
@@ -463,6 +514,7 @@ CREATE TABLE services (
   days_of_week INTEGER[] NOT NULL,     -- 0=Sunday … 6=Saturday
   required_documents TEXT[],
   is_active BOOLEAN DEFAULT true,
+  archived_at TIMESTAMP DEFAULT NULL,  -- NULL = active; set on archive
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_by UUID REFERENCES users(id) -- must be a manager
@@ -483,6 +535,7 @@ CREATE TABLE appointments (
   personal_details JSONB NOT NULL,     -- snapshot of client details at booking time
   required_documents TEXT[],
   remarks TEXT,
+  archived_at TIMESTAMP DEFAULT NULL,  -- NULL = active; set when completed/cancelled
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   processed_by UUID REFERENCES staff_profiles(user_id) -- staff or manager who last acted
@@ -490,15 +543,24 @@ CREATE TABLE appointments (
 
 -- ============================================================
 -- SERVICE ASSIGNMENTS — managers assign staff to services
--- Both staff and managers may be assigned to a service.
+-- Soft-deleted via is_active = false + archived_at timestamp.
+-- Historical assignments are preserved for audit purposes.
 -- ============================================================
 CREATE TABLE service_assignments (
-  staff_id UUID REFERENCES staff_profiles(user_id) ON DELETE CASCADE,
-  service_id UUID REFERENCES services(id) ON DELETE CASCADE,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  staff_id UUID NOT NULL REFERENCES staff_profiles(user_id),
+  service_id UUID NOT NULL REFERENCES services(id),
+  is_active BOOLEAN DEFAULT true,
   assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   assigned_by UUID REFERENCES users(id), -- must be a manager
-  PRIMARY KEY (staff_id, service_id)
+  archived_at TIMESTAMP DEFAULT NULL,    -- NULL = active; set on removal
+  archived_by UUID REFERENCES users(id)  -- manager who removed the assignment
 );
+
+-- Unique constraint only on active assignments to allow re-assignment after archive
+CREATE UNIQUE INDEX idx_service_assignments_active
+  ON service_assignments(staff_id, service_id)
+  WHERE is_active = true;
 
 -- ============================================================
 -- AUDIT LOGS — immutable record of all system actions
@@ -521,7 +583,55 @@ CREATE INDEX idx_appointments_service_id ON appointments(service_id);
 CREATE INDEX idx_appointments_date_time ON appointments(appointment_date_time);
 CREATE INDEX idx_appointments_tracking_number ON appointments(tracking_number);
 CREATE INDEX idx_appointments_status ON appointments(status);
+CREATE INDEX idx_appointments_archived_at ON appointments(archived_at);
 CREATE INDEX idx_audit_logs_timestamp ON audit_logs(timestamp);
 CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
 CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_archived_at ON users(archived_at);
+CREATE INDEX idx_services_archived_at ON services(archived_at);
+
+-- ============================================================
+-- VIEWS — elevated manager visibility
+-- ============================================================
+
+-- All staff accounts with their active assigned services (manager dashboard)
+CREATE VIEW manager_staff_overview AS
+SELECT
+  u.id            AS user_id,
+  u.email,
+  u.role,
+  u.is_active,
+  u.archived_at,
+  sp.first_name,
+  sp.last_name,
+  sp.employee_id,
+  sp.department,
+  COALESCE(
+    json_agg(
+      json_build_object(
+        'service_id',   sa.service_id,
+        'service_name', svc.name,
+        'assigned_at',  sa.assigned_at,
+        'assigned_by',  sa.assigned_by
+      )
+    ) FILTER (WHERE sa.service_id IS NOT NULL AND sa.is_active = true),
+    '[]'
+  ) AS assigned_services
+FROM users u
+JOIN staff_profiles sp ON sp.user_id = u.id
+LEFT JOIN service_assignments sa  ON sa.staff_id = u.id
+LEFT JOIN services svc            ON svc.id = sa.service_id
+WHERE u.role = 'staff'
+GROUP BY u.id, u.email, u.role, u.is_active, u.archived_at,
+         sp.first_name, sp.last_name, sp.employee_id, sp.department;
+
+-- All appointments across all services (manager oversight — active and archived)
+CREATE VIEW manager_appointments_overview AS
+SELECT
+  a.*,
+  svc.name        AS service_name,
+  svc.department  AS service_department,
+  svc.created_by  AS service_manager_id
+FROM appointments a
+JOIN services svc ON svc.id = a.service_id;
 ```

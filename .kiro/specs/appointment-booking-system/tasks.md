@@ -18,6 +18,7 @@ This implementation plan breaks down the Appointment Booking System into discret
   - [ ] 1.2 Set up Supabase database and migrations
     - Create Supabase project and configure database
     - Set up database schema with all tables (users, clients, staff_profiles, admin_profiles, services, appointments, service_assignments, audit_logs)
+    - Implement soft-delete pattern: all tables use archived_at + is_active instead of hard deletes; no ON DELETE CASCADE on profile tables
     - Implement database migration system using Knex.js with Supabase connection
     - Configure Row Level Security (RLS) policies for data protection
     - Add database indexes for performance optimization
@@ -161,11 +162,11 @@ This implementation plan breaks down the Appointment Booking System into discret
 
   - [ ] 8.2 Implement service assignment management
     - Create POST /api/services/:id/assignments to assign a staff-level account to a service (manager only)
-    - Create GET /api/services/:id/assignments to list all staff assigned to a service (manager view)
-    - Create DELETE /api/services/:id/assignments/:staffId to remove a staff assignment (manager only)
+    - Create GET /api/services/:id/assignments to list all active staff assigned to a service (manager view)
+    - Create PATCH /api/services/:id/assignments/:staffId/archive to soft-delete an assignment (sets is_active = false, archived_at, archived_by — manager only)
     - Enforce that only accounts with role = 'staff' may be assigned (reject manager/admin/client)
     - Implement service-specific access control validation using manager_staff_overview view
-    - Create assignment history tracking
+    - Create assignment history tracking (archived assignments remain queryable)
     - _Requirements: 6.5, 6.6, 6.7, 7.1_
 
   - [ ]* 8.3 Write property tests for service management
