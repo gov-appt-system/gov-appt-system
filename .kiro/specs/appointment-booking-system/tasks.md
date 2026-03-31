@@ -22,28 +22,29 @@ Incremental build order: database schema → backend services → REST API endpo
     - _Requirements: 2.3, 2.6, 3.2, 9.1_
   - [x] 2.4 Write Knex migration: `service_assignments` table with partial unique index `idx_service_assignments_active` (active assignments only), `archived_at`, and `archived_by` FK
     - _Requirements: 6.5, 6.7_
-  - [x] 2.5 Write Knex migration: `audit_logs` table (immutable, no soft-delete) and all remaining indexes from the design schema
+  - [x] 2.5 Write Kne
+  x migration: `audit_logs` table (immutable, no soft-delete) and all remaining indexes from the design schema
     - _Requirements: 9.2, 9.3, 9.5_
   - [x] 2.6 Write Knex migration: `manager_staff_overview` and `manager_appointments_overview` views
     - _Requirements: 3.1, 6.2_
   - [x] 2.7 Write a database seed file that creates one admin, one manager, one staff, and one client account for local development
     - _Requirements: 6.1_
 
-- [ ] 3. Backend: shared types, utilities, and configuration
-  - [ ] 3.1 Define all shared TypeScript interfaces and enums from the design (`User`, `Client`, `Staff`, `Manager`, `Admin`, `Appointment`, `AppointmentStatus`, `Service`, `ServiceAssignment`, `AuditLog`, `UserRole`, `TimeSlot`, `ServiceHours`, `PersonalDetails`) in `packages/backend/src/types/index.ts`
+- [-] 3. Backend: shared types, utilities, and configuration
+  - [x] 3.1 Define all shared TypeScript interfaces and enums from the design (`User`, `Client`, `Staff`, `Manager`, `Admin`, `Appointment`, `AppointmentStatus`, `Service`, `ServiceAssignment`, `AuditLog`, `UserRole`, `TimeSlot`, `ServiceHours`, `PersonalDetails`) in `packages/backend/src/types/index.ts`
     - _Requirements: 1.3, 2.3, 3.2, 7.1_
-  - [ ] 3.2 Implement `validatePasswordComplexity(password: string): boolean` — minimum 8 characters, mixed case, and at least one number
+  - [x] 3.2 Implement `validatePasswordComplexity(password: string): boolean` — minimum 8 characters, mixed case, and at least one number
     - _Requirements: 1.6, 5.4_
-  - [ ]* 3.3 Write property test for `validatePasswordComplexity`
+  - [ ] 3.3 Write property test for `validatePasswordComplexity`
     - **Property 1: Password complexity is consistent** — for any string, `validatePasswordComplexity` returns true if and only if the string has ≥8 chars, contains upper and lower case letters, and contains a digit
     - **Validates: Requirements 1.6, 5.4**
-  - [ ] 3.4 Implement `generateTrackingNumber(): string` — produces a unique alphanumeric string (e.g. `APT-YYYYMMDD-XXXXX`)
+  - [x] 3.4 Implement `generateTrackingNumber(): string` — produces a unique alphanumeric string (e.g. `APT-YYYYMMDD-XXXXX`)
     - _Requirements: 2.4_
   - [ ]* 3.5 Write property test for `generateTrackingNumber`
     - **Property 2: Tracking numbers are unique** — for any N calls to `generateTrackingNumber`, all N results are distinct
     - **Property 3: Tracking number format** — for any generated tracking number, `validateTrackingNumber` returns true
     - **Validates: Requirements 2.4**
-  - [ ] 3.6 Configure Winston logger and Supabase client singleton in `packages/backend/src/config/`
+  - [x] 3.6 Configure Winston logger and Supabase client singleton in `packages/backend/src/config/`
     - _Requirements: 9.4_
 
 - [ ] 4. Backend: AuthenticationService
