@@ -64,7 +64,7 @@ Incremental build order: database schema → backend services → REST API endpo
     - _Requirements: 1.3_
   - [x] 5.2 Implement `canAccessService(userId, serviceId)` — returns true only if the user has an active `service_assignments` row for that service (staff/manager) or is a client
     - _Requirements: 3.1, 6.5_
-  - [ ]* 5.3 Write property tests for RBACController
+  - [-] 5.3 Write property tests for RBACController
     - **Property 6: Permission matrix completeness** — for every (role, resource, action) triple defined in the design matrix, `hasPermission` returns the expected value
     - **Property 7: Archived users are denied** — for any user with `is_active = false`, `enforcePermission` always throws regardless of resource/action
     - **Validates: Requirements 1.3, 6.4**
@@ -90,15 +90,15 @@ Incremental build order: database schema → backend services → REST API endpo
     - **Property 10: Audit log immutability** — for any logged action, querying `getAuditLogs` always returns a record matching the logged action; no update or delete path exists
     - **Validates: Requirements 9.2, 9.3**
 
-- [ ] 8. Backend: NotificationService
-  - [ ] 8.1 Implement `sendBookingConfirmation` and `sendStatusUpdate` using an email provider SDK (SendGrid or Nodemailer); use HTML templates with government agency branding placeholders
+- [x] 8. Backend: NotificationService
+  - [x] 8.1 Implement `sendBookingConfirmation` and `sendStatusUpdate` using an email provider SDK (SendGrid or Nodemailer); use HTML templates with government agency branding placeholders
     - _Requirements: 2.5, 3.5, 8.1, 8.2, 8.5_
-  - [ ] 8.2 Implement `sendPasswordResetEmail`
+  - [x] 8.2 Implement `sendPasswordResetEmail`
     - _Requirements: 8.3_
-  - [ ] 8.3 Implement `logEmailFailure` and `retryFailedEmails` — store failures in a `email_failures` table or in-memory queue with configurable retry count
+  - [x] 8.3 Implement `logEmailFailure` and `retryFailedEmails` — store failures in a `email_failures` table or in-memory queue with configurable retry count
     - _Requirements: 8.4_
 
-- [ ] 9. Checkpoint — backend services
+- [x] 9. Checkpoint — backend services
   - Run all backend unit and property tests: `pnpm --filter backend test --run`
   - Ensure all tests pass; ask the user if questions arise before continuing.
 

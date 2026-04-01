@@ -2,16 +2,18 @@ import { supabase } from '../config/supabase';
 import { logger } from '../config/logger';
 import type { AuditLog, AuditFilters } from '../types';
 
-interface InsertOpts {
-  userId?: string;
-  action: string;
-  resource: string;
-  details?: Record<string, unknown>;
-  ipAddress?: string;
-}
+// ============================================================
+// AuditLogger
+// Inserts immutable rows into audit_logs; no update/delete paths.
+// ============================================================
 
-async function insertAuditLog(opts: InsertOpts): Promise<void> {
-  const { userId, action, resource, details, ipAddress } = opts;
+async function insertAuditLog(
+  userId: string | undefined,
+  action: string,
+  resource: string,
+  details: Record<string, unknown> | undefined,
+  ipAddress: string | undefined,
+): Promise<void> {
   const { error } = await supabase.from('audit_logs').insert({
     user_id: userId ?? null,
     action,
@@ -19,7 +21,9 @@ async function insertAuditLog(opts: InsertOpts): Promise<void> {
     details: details ?? null,
     ip_address: ipAddress ?? null,
   });
+
   if (error) {
+    // Log to Winston but do not throw — audit failures must not break the caller
     logger.error('Failed to write audit log', { error, action, resource, userId });
   }
 }
@@ -37,6 +41,10 @@ function mapRow(row: Record<string, unknown>): AuditLog {
 }
 
 export const AuditLogger = {
+  /**
+   * Record an action performed by an authenticated user.
+   * Requirements: 3.7, 6.8, 7.6, 9.2, 9.3
+   */
   async logUserAction(
     userId: string,
     action: string,
@@ -44,21 +52,36 @@ export const AuditLogger = {
     details?: Record<string, unknown>,
     ipAddress?: string,
   ): Promise<void> {
-    await insertAuditLog({ userId, action, resource, details, ipAddress });
+    await insertAuditLog(userId, action, resource, details, ipAddress);
   },
 
-  async logSystemEvent(event: string, details: Record<string, unknown>): Promise<void> {
-    await insertAuditLog({ action: event, resource: 'system', details });
+  /**
+   * Record a system-generated event (no human actor).
+   * Requirements: 9.2, 9.3
+   */
+  async logSystemEvent(
+    event: string,
+    details: Record<string, unknown>,
+  ): Promise<void> {
+    await insertAuditLog(undefined, event, 'system', details, undefined);
   },
 
+  /**
+   * Record an application error with context for troubleshooting.
+   * Requirements: 9.4
+   */
   async logError(error: Error, context: Record<string, unknown>): Promise<void> {
-    await insertAuditLog({
-      action: 'error',
-      resource: 'system',
-      details: { message: error.message, stack: error.stack, ...context },
-    });
+    await insertAuditLog(undefined, 'error', 'system', {
+      message: error.message,
+      stack: error.stack,
+      ...context,
+    }, undefined);
   },
 
+  /**
+   * Query audit logs with optional filters.
+   * Requirements: 9.5
+   */
   async getAuditLogs(filters: AuditFilters): Promise<AuditLog[]> {
     let query = supabase
       .from('audit_logs')
@@ -72,21 +95,31 @@ export const AuditLogger = {
     if (filters.endDate)   query = query.lte('timestamp', filters.endDate.toISOString());
 
     const { data, error } = await query;
+
     if (error) {
       logger.error('Failed to retrieve audit logs', { error, filters });
       throw new Error(`Failed to retrieve audit logs: ${error.message}`);
     }
+
     return (data ?? []).map(mapRow);
   },
 
+  /**
+   * Export audit logs for a date range as a CSV string.
+   * Requirements: 9.5
+   */
   async exportAuditLogs(startDate: Date, endDate: Date): Promise<string> {
     const logs = await AuditLogger.getAuditLogs({ startDate, endDate });
+
     const escape = (v: unknown): string => {
       const s = v == null ? '' : String(v).replace(/"/g, '""');
       return `"${s}"`;
     };
+
     const header = 'id,timestamp,user_id,action,resource,details,ip_address';
+
     if (logs.length === 0) return header + '\n';
+
     const rows = logs.map((l) =>
       [
         escape(l.id),
@@ -98,6 +131,7 @@ export const AuditLogger = {
         escape(l.ipAddress ?? ''),
       ].join(','),
     );
+
     return [header, ...rows].join('\n') + '\n';
   },
 };
