@@ -35,7 +35,7 @@ Incremental build order: database schema → backend services → REST API endpo
     - _Requirements: 1.3, 2.3, 3.2, 7.1_
   - [x] 3.2 Implement `validatePasswordComplexity(password: string): boolean` — minimum 8 characters, mixed case, and at least one number
     - _Requirements: 1.6, 5.4_
-  - [ ] 3.3 Write property test for `validatePasswordComplexity`
+  - [x] 3.3 Write property test for `validatePasswordComplexity`
     - **Property 1: Password complexity is consistent** — for any string, `validatePasswordComplexity` returns true if and only if the string has ≥8 chars, contains upper and lower case letters, and contains a digit
     - **Validates: Requirements 1.6, 5.4**
   - [x] 3.4 Implement `generateTrackingNumber(): string` — produces a unique alphanumeric string (e.g. `APT-YYYYMMDD-XXXXX`)
@@ -47,44 +47,44 @@ Incremental build order: database schema → backend services → REST API endpo
   - [x] 3.6 Configure Winston logger and Supabase client singleton in `packages/backend/src/config/`
     - _Requirements: 9.4_
 
-- [ ] 4. Backend: AuthenticationService
-  - [ ] 4.1 Implement `hashPassword` and `authenticate` using bcrypt; implement `createSession` and `validateSession` using JWT (HS256, configurable expiry)
+- [x] 4. Backend: AuthenticationService
+  - [x] 4.1 Implement `hashPassword` and `authenticate` using bcrypt; implement `createSession` and `validateSession` using JWT (HS256, configurable expiry)
     - _Requirements: 1.1, 1.2_
-  - [ ] 4.2 Implement `terminateSession` (JWT blocklist or short-lived token strategy), `registerClient`, and `changePassword`
+  - [x] 4.2 Implement `terminateSession` (JWT blocklist or short-lived token strategy), `registerClient`, and `changePassword`
     - _Requirements: 1.4, 1.5, 5.4, 5.5_
-  - [ ] 4.3 Implement `sendPasswordResetEmail` and `resetPassword` using a signed, time-limited token
+  - [x] 4.3 Implement `sendPasswordResetEmail` and `resetPassword` using a signed, time-limited token
     - _Requirements: 1.7, 8.3_
   - [ ]* 4.4 Write property tests for AuthenticationService
     - **Property 4: Hash round-trip** — for any valid password string, `authenticate` with the correct password succeeds and with any other string fails
     - **Property 5: Password change rejects wrong current password** — for any user, calling `changePassword` with an incorrect current password always returns an error and leaves the password unchanged
     - **Validates: Requirements 1.1, 1.2, 5.4, 5.5**
 
-- [ ] 5. Backend: RBACController
-  - [ ] 5.1 Implement the permission matrix from the design as a static lookup table in `packages/backend/src/services/rbac.ts`; implement `hasPermission` and `enforcePermission` (throws 403 on denial)
+- [x] 5. Backend: RBACController
+  - [x] 5.1 Implement the permission matrix from the design as a static lookup table in `packages/backend/src/services/rbac.ts`; implement `hasPermission` and `enforcePermission` (throws 403 on denial)
     - _Requirements: 1.3_
-  - [ ] 5.2 Implement `canAccessService(userId, serviceId)` — returns true only if the user has an active `service_assignments` row for that service (staff/manager) or is a client
+  - [x] 5.2 Implement `canAccessService(userId, serviceId)` — returns true only if the user has an active `service_assignments` row for that service (staff/manager) or is a client
     - _Requirements: 3.1, 6.5_
   - [ ]* 5.3 Write property tests for RBACController
     - **Property 6: Permission matrix completeness** — for every (role, resource, action) triple defined in the design matrix, `hasPermission` returns the expected value
     - **Property 7: Archived users are denied** — for any user with `is_active = false`, `enforcePermission` always throws regardless of resource/action
     - **Validates: Requirements 1.3, 6.4**
 
-- [ ] 6. Backend: CalendarService
-  - [ ] 6.1 Implement `getAvailableSlots(serviceId, date)` — queries appointments for the date, computes remaining capacity per slot based on `services.capacity` and `services.duration`
+- [x] 6. Backend: CalendarService
+  - [x] 6.1 Implement `getAvailableSlots(serviceId, date)` — queries appointments for the date, computes remaining capacity per slot based on `services.capacity` and `services.duration`
     - _Requirements: 2.1_
-  - [ ] 6.2 Implement `checkSlotAvailability` and `reserveSlot` — `reserveSlot` must be atomic (use a DB transaction or SELECT FOR UPDATE) to prevent double booking
+  - [x] 6.2 Implement `checkSlotAvailability` and `reserveSlot` — `reserveSlot` must be atomic (use a DB transaction or SELECT FOR UPDATE) to prevent double booking
     - _Requirements: 2.2_
-  - [ ] 6.3 Implement `isWithinServiceHours(serviceId, dateTime)` — validates against `start_time`, `end_time`, and `days_of_week`
+  - [x] 6.3 Implement `isWithinServiceHours(serviceId, dateTime)` — validates against `start_time`, `end_time`, and `days_of_week`
     - _Requirements: 3.3_
-  - [ ]* 6.4 Write property tests for CalendarService
+  - [x] 6.4 Write property tests for CalendarService
     - **Property 8: No double booking** — for any service with capacity N, booking N+1 concurrent appointments at the same slot always fails for the (N+1)th attempt
     - **Property 9: Outside-hours bookings rejected** — for any service and any dateTime outside its configured hours, `isWithinServiceHours` returns false
     - **Validates: Requirements 2.2, 3.3**
 
-- [ ] 7. Backend: AuditLogger
-  - [ ] 7.1 Implement `logUserAction`, `logSystemEvent`, and `logError` — each inserts a row into `audit_logs` with actor, action, resource, details JSONB, and IP address
+- [x] 7. Backend: AuditLogger
+  - [x] 7.1 Implement `logUserAction`, `logSystemEvent`, and `logError` — each inserts a row into `audit_logs` with actor, action, resource, details JSONB, and IP address
     - _Requirements: 3.7, 6.8, 7.6, 9.2, 9.3, 9.4_
-  - [ ] 7.2 Implement `getAuditLogs(filters)` and `exportAuditLogs(startDate, endDate)` — export returns CSV or JSON string
+  - [x] 7.2 Implement `getAuditLogs(filters)` and `exportAuditLogs(startDate, endDate)` — export returns CSV or JSON string
     - _Requirements: 9.5_
   - [ ]* 7.3 Write property test for AuditLogger
     - **Property 10: Audit log immutability** — for any logged action, querying `getAuditLogs` always returns a record matching the logged action; no update or delete path exists

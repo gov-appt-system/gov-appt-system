@@ -1,8 +1,8 @@
 # Appointment Booking System
 
-A web-based appointment scheduling system for government agencies with role-based access control, real-time availability, and email notifications.
+A government agency appointment scheduling system with role-based access control, real-time availability, and email notifications.
 
-**Stack:** React + TypeScript (frontend), Node.js/Express + TypeScript (backend), Supabase (PostgreSQL)
+> **Status:** Backend API in active development. Frontend not yet started.
 
 ---
 
@@ -10,106 +10,132 @@ A web-based appointment scheduling system for government agencies with role-base
 
 - Node.js 18+
 - pnpm (`npm install -g pnpm`)
-- A [Supabase](https://supabase.com) project
+- A [Supabase](https://supabase.com) project (free tier works)
 
 ---
 
-## Setup
+## Quick Setup (after cloning)
 
-### 1. Clone and install
+```bash
+bash scripts/setup.sh
+```
 
-```cmd
-git clone <repository-url>
-cd appointment-booking-system
+This will:
+- Verify Node 18+ and pnpm are available
+- Run `pnpm install` across all packages
+- Copy `packages/backend/.env.example` to `packages/backend/.env` if it does not exist yet
+
+---
+
+## Manual Setup
+
+```bash
+# 1. Install dependencies
 pnpm install
+
+# 2. Configure environment
+cp packages/backend/.env.example packages/backend/.env
+# then edit packages/backend/.env with your actual values
 ```
 
-### 2. Configure environment variables
+### Required environment variables (packages/backend/.env)
 
-**Backend** â€” create `backend/.env`:
+| Variable | Description |
+|---|---|
+| SUPABASE_URL | Your Supabase project URL |
+| SUPABASE_ANON_KEY | Supabase anon/public key |
+| SUPABASE_SERVICE_ROLE_KEY | Supabase service role key (server-side only) |
+| DATABASE_URL | Direct Postgres connection string (for Knex migrations) |
+| JWT_SECRET | Secret for signing JWTs (min 32 chars) |
+| JWT_EXPIRES_IN | Token lifetime, e.g. 8h |
+| SENDGRID_API_KEY | SendGrid API key for email |
+| EMAIL_FROM | Sender address, e.g. noreply@youragency.gov.ph |
+| PORT | Backend port (default 3000) |
+| FRONTEND_URL | Used in reset-password email links |
 
-```env
-SUPABASE_URL=https://your-project-id.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-DATABASE_URL=postgresql://postgres:your-password@db.your-project-id.supabase.co:5432/postgres
+---
 
-JWT_SECRET=your-jwt-secret
-JWT_EXPIRES_IN=24h
+## Database
 
-EMAIL_API_KEY=your-sendgrid-api-key
-EMAIL_FROM=noreply@youragency.gov.ph
+```bash
+cd packages/backend
 
-NODE_ENV=development
-PORT=3001
-FRONTEND_URL=http://localhost:3000
-```
-
-**Frontend** â€” create `frontend/.env`:
-
-```env
-REACT_APP_API_URL=http://localhost:3001/api
-REACT_APP_SUPABASE_URL=https://your-project-id.supabase.co
-REACT_APP_SUPABASE_ANON_KEY=your-anon-key
-```
-
-### 3. Run database migrations
-
-```cmd
-cd backend
+# Apply all migrations
 pnpm run migrate
-```
 
-Optionally seed sample data:
+# Rollback last migration
+pnpm run migrate:rollback
 
-```cmd
+# Seed dev accounts (client, staff, manager, admin)
 pnpm run seed
+
+# Reset database (rollback all + re-migrate + seed)
+pnpm run db:reset
 ```
 
-### 4. Start the app
+---
 
-From the root directory:
+## Running the Backend
 
-```cmd
+```bash
+cd packages/backend
 pnpm run dev
 ```
 
-Or individually:
+Server starts at http://localhost:3000
 
-```cmd
-REM Terminal 1
-cd backend && pnpm run dev
-
-REM Terminal 2
-cd frontend && pnpm start
-```
-
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:3001/api
+Health check: GET http://localhost:3000/health
 
 ---
 
-## Common Commands
+## Testing
 
-```cmd
-pnpm run test:all          REM Run all tests
-pnpm run lint:all          REM Lint all code
-pnpm run build:all         REM Production build
+```bash
+# All tests (from root)
+pnpm test
 
-REM From /backend
-pnpm run migrate           REM Apply migrations
-pnpm run migrate:rollback  REM Rollback last migration
-pnpm run db:reset          REM Reset database
+# Backend only
+cd packages/backend && pnpm test
+```
+
+Tests use Vitest and run once (no watch mode).
+
+---
+
+## Project Structure
+
+```
+appointment-booking-system/
++-- packages/
+¦   +-- backend/          # Express + TypeScript API
+¦   ¦   +-- src/
+¦   ¦   ¦   +-- config/   # Supabase client, logger
+¦   ¦   ¦   +-- db/       # Knex migrations and seeds
+¦   ¦   ¦   +-- services/ # Auth, RBAC, Audit, Notification
+¦   ¦   ¦   +-- types/    # Shared TypeScript types
+¦   ¦   ¦   +-- utils/    # Password helpers, tracking
+¦   ¦   +-- knexfile.ts
+¦   +-- frontend/         # React app (not yet started)
++-- scripts/
+¦   +-- setup.sh          # One-time setup script
++-- pnpm-workspace.yaml
 ```
 
 ---
 
 ## Troubleshooting
 
-**Port in use:**
-```cmd
-netstat -ano | findstr :3001
-taskkill /PID <pid> /F
+**Port already in use:**
+```bash
+lsof -i :3000
+kill -9 <PID>
 ```
 
-**Supabase connection failing:** Double-check `DATABASE_URL` format and that your Supabase project is active at https://app.supabase.com.
+**Supabase connection failing:**
+- Double-check DATABASE_URL format: postgresql://postgres:<password>@db.<project-ref>.supabase.co:5432/postgres
+- Make sure your Supabase project is active at https://app.supabase.com
+
+**pnpm not found:**
+```bash
+npm install -g pnpm
+```
