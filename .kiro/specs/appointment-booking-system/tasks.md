@@ -54,7 +54,7 @@ Incremental build order: database schema → backend services → REST API endpo
     - _Requirements: 1.4, 1.5, 5.4, 5.5_
   - [x] 4.3 Implement `sendPasswordResetEmail` and `resetPassword` using a signed, time-limited token
     - _Requirements: 1.7, 8.3_
-  - [ ]* 4.4 Write property tests for AuthenticationService
+  - [x] 4.4 Write property tests for AuthenticationService
     - **Property 4: Hash round-trip** — for any valid password string, `authenticate` with the correct password succeeds and with any other string fails
     - **Property 5: Password change rejects wrong current password** — for any user, calling `changePassword` with an incorrect current password always returns an error and leaves the password unchanged
     - **Validates: Requirements 1.1, 1.2, 5.4, 5.5**
@@ -64,7 +64,7 @@ Incremental build order: database schema → backend services → REST API endpo
     - _Requirements: 1.3_
   - [x] 5.2 Implement `canAccessService(userId, serviceId)` — returns true only if the user has an active `service_assignments` row for that service (staff/manager) or is a client
     - _Requirements: 3.1, 6.5_
-  - [-] 5.3 Write property tests for RBACController
+  - [x] 5.3 Write property tests for RBACController
     - **Property 6: Permission matrix completeness** — for every (role, resource, action) triple defined in the design matrix, `hasPermission` returns the expected value
     - **Property 7: Archived users are denied** — for any user with `is_active = false`, `enforcePermission` always throws regardless of resource/action
     - **Validates: Requirements 1.3, 6.4**
