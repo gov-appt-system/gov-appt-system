@@ -97,6 +97,10 @@ pnpm test
 
 # Backend only
 cd packages/backend && pnpm test
+
+# eh since backend branch to (root folder works too_
+cd ..
+pnpm --filter backend test 2>&1
 ```
 
 Tests use [Vitest](https://vitest.dev/) and run once (no watch mode).
@@ -140,9 +144,8 @@ kill -9 <PID>
 ```bash
 npm install -g pnpm
 ```
-## Rundown of Major Backend Files
+# Rundown of Major Backend Files
 
-Here is the formatted Markdown for your application structure:
 
 ## Entry Point
 
