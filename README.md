@@ -1,115 +1,161 @@
-# Appointment Booking System
+# Government Appointment Booking System
 
-A web-based appointment scheduling system for government agencies with role-based access control, real-time availability, and email notifications.
+A government agency appointment scheduling system with role-based access control,
+real-time availability, and email notifications.
 
-**Stack:** React + TypeScript (frontend), Node.js/Express + TypeScript (backend), Supabase (PostgreSQL)
+**Working Prototype (Frontend):**
+[View Figma Prototype](https://www.figma.com/make/J66xF8HBB6PSimi7D7KHdo/Government-Appointment-Booking-System?p=f&t=MVCBImR2iRFXcUt9-0&preview-route=%2Flogin)
 
----
-
-## Prerequisites
-
-- Node.js 18+
-- pnpm (`npm install -g pnpm`)
-- A [Supabase](https://supabase.com) project
+> **Status:** Backend API in active development. Frontend in progress.
 
 ---
 
-## Setup
+## Team Branches
 
-### 1. Clone and install
+| Team | Branch |
+|MAIN BRANCH FOR DEPLOYMENT |`main`| walang gagalaw OR Magccommit ha
+| Staging Branch (pre-deployment and merging of front/back) |`staging-branch`|
+| Frontend | `frontend-branch` |
+| Backend (Kate) | `branch-kate` |
+| Backend (Gato) | `branch-gato` |
 
-```cmd
-git clone <repository-url>
-cd appointment-booking-system
+---
+
+## 1. Install Git (Windows)
+
+1. Go to https://git-scm.com/download/win
+2. Click **"Click here to download"** — it auto-detects 64-bit Windows
+3. Run the downloaded `.exe` installer
+4. During setup, keep all defaults **except**:
+   - On **"Choosing the default editor"** → select **Visual Studio Code** (if you use it)
+   - On **"Adjusting your PATH environment"** → select **"Git from the command line and also from 3rd-party software"**
+5. Click **Next** through the rest, then **Install**
+6. Verify the install — open **Command Prompt** or **PowerShell** and run:
+
+```bash
+git --version
+```
+
+You should see something like `git version 2.x.x.windows.x`.
+
+---
+
+## 2. Clone the Repository
+
+Go to terminal on VS Code, use this command para mabilis [ctrl + `]
+
+```
+# Clone the repo
+git clone https://github.com/gov-appt-system/gov-appt-system.git
+
+# Enter the project folder
+cd gov-appointment-app
+```
+
+### Install Dependencies
+
+Make sure you have **Node.js 18+** and **pnpm** installed first (idk pa sa frontend magkaiba version soo here's what we do for now yall, gawin niyo sa vscode per usual)
+
+```bash
+# Install pnpm if you don't have it
+npm install -g pnpm
+
+# Install all dependencies from the root
 pnpm install
 ```
 
-### 2. Configure environment variables
-
-**Backend** — create `backend/.env`:
-
-```env
-SUPABASE_URL=https://your-project-id.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-DATABASE_URL=postgresql://postgres:your-password@db.your-project-id.supabase.co:5432/postgres
-
-JWT_SECRET=your-jwt-secret
-JWT_EXPIRES_IN=24h
-
-EMAIL_API_KEY=your-sendgrid-api-key
-EMAIL_FROM=noreply@youragency.gov.ph
-
-NODE_ENV=development
-PORT=3001
-FRONTEND_URL=http://localhost:3000
-```
-
-**Frontend** — create `frontend/.env`:
-
-```env
-REACT_APP_API_URL=http://localhost:3001/api
-REACT_APP_SUPABASE_URL=https://your-project-id.supabase.co
-REACT_APP_SUPABASE_ANON_KEY=your-anon-key
-```
-
-### 3. Run database migrations
-
-```cmd
-cd backend
-pnpm run migrate
-```
-
-Optionally seed sample data:
-
-```cmd
-pnpm run seed
-```
-
-### 4. Start the app
-
-From the root directory:
-
-```cmd
-pnpm run dev
-```
-
-Or individually:
-
-```cmd
-REM Terminal 1
-cd backend && pnpm run dev
-
-REM Terminal 2
-cd frontend && pnpm start
-```
-
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:3001/api
-
 ---
 
-## Common Commands
+## 3. Switch to Your Team's Branch
 
-```cmd
-pnpm run test:all          REM Run all tests
-pnpm run lint:all          REM Lint all code
-pnpm run build:all         REM Production build
+```bash
+# Frontend team
+git checkout frontend-branch
 
-REM From /backend
-pnpm run migrate           REM Apply migrations
-pnpm run migrate:rollback  REM Rollback last migration
-pnpm run db:reset          REM Reset database
+# Backend — Kate
+git checkout branch-kate
+
+# Backend — Gato
+git checkout branch-gato
 ```
 
 ---
 
-## Troubleshooting
+## 4. Basic Git Commands
 
-**Port in use:**
-```cmd
-netstat -ano | findstr :3001
-taskkill /PID <pid> /F
+### Check status and history
+
+```bash
+# See what files you've changed
+git status
+
+# See commit history
+git log --oneline
 ```
 
-**Supabase connection failing:** Double-check `DATABASE_URL` format and that your Supabase project is active at https://app.supabase.com.
+### Pull latest changes from remote
+
+```bash
+# Always pull before starting work to avoid conflicts
+git pull origin <your-branch-name>
+```
+
+### Stage and commit your changes
+
+```bash
+# Stage a specific file
+git add filename.ts
+
+# Stage ALL changed files
+git add .
+
+# Commit with a message
+git commit -m "your message here"
+```
+
+### Push your commits
+
+```bash
+git push origin <your-branch-name>
+```
+
+### Examples per team
+
+```bash
+# Frontend
+git push origin frontend-branch
+
+# Backend Kate
+git push origin branch-kate
+
+# Backend Gato
+git push origin branch-gato
+```
+
+---
+
+## 5. Recommended Workflow (Daily)
+
+```bash
+# 1. Pull latest before you start
+git pull origin <your-branch>
+
+# 2. Make your changes...
+
+# 3. Stage and commit
+git add .
+git commit -m "brief description of what you did"
+
+# 4. Push
+git push origin <your-branch>
+```
+
+---
+
+## Tips
+
+- **Never push directly to `main`** — always work on your team's branch
+- Write clear commit messages (e.g. `"add login form validation"` not `"fix stuff"`)
+- Pull before you push to avoid merge conflicts (WAG MAG FFORCE HAA)
+- If you get a merge conflict, ask your team lead before resolving it
+```
