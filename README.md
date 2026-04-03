@@ -10,10 +10,9 @@ real-time availability, and email notifications.
 
 ---
 
-## Team Branches
+## Team Branches pag may guimalaw sa main branch ggulpihin q
 
-| Team | Branch |
-|MAIN BRANCH FOR DEPLOYMENT |`main`| walang gagalaw OR Magccommit ha
+|MAIN BRANCH FOR DEPLOYMENT |`main`|
 | Staging Branch (pre-deployment and merging of front/back) |`staging-branch`|
 | Frontend | `frontend-branch` |
 | Backend (Kate) | `branch-kate` |
