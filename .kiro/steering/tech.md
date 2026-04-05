@@ -10,7 +10,7 @@
 - **Language:** TypeScript 5 (strict mode, CommonJS modules, ES2020 target)
 - **Framework:** Express.js 4
 - **Database client:** Supabase JS SDK (`@supabase/supabase-js`) for runtime queries
-- **Migrations:** Knex.js (migrations and seeds in `src/db/migrations` and `src/db/seeds`)
+- **Migrations:** Plain SQL files in `src/db/schema/` — apply via Supabase Dashboard SQL Editor or Supabase CLI
 - **Auth:** JWT (`jsonwebtoken`) + bcrypt (12 rounds)
 - **Email:** Nodemailer / SendGrid via `SENDGRID_API_KEY`
 - **Logging:** Winston
@@ -28,7 +28,8 @@
 
 ## Database
 - **Supabase (PostgreSQL)** — hosted Postgres with RLS enabled
-- Knex handles schema migrations only; all runtime queries go through the Supabase JS client
+- All runtime queries go through the Supabase JS client
+- Schema is defined as plain SQL in `packages/backend/src/db/schema/` — apply in order via Supabase Dashboard or CLI
 - Soft-delete pattern: records are never hard-deleted; `archived_at` is set instead
 
 ## Common Commands
@@ -49,13 +50,12 @@ cd packages/backend && pnpm test
 # Compile TypeScript
 cd packages/backend && pnpm run build
 
-# Database migrations
-cd packages/backend && pnpm run migrate
-cd packages/backend && pnpm run migrate:rollback
-cd packages/backend && pnpm run seed
+# Apply schema (run SQL files in order via Supabase Dashboard or CLI)
+# See packages/backend/src/db/schema/SCHEMA_CHANGELOG.md for instructions
 ```
 
 ## Environment
 - Backend env file: `packages/backend/.env` (copy from `.env.example`)
 - Never commit `.env` files — they are gitignored
-- Key vars: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `JWT_SECRET`, `SENDGRID_API_KEY`
+- Key vars: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET`, `SENDGRID_API_KEY`
+- `DATABASE_URL` is no longer required (was only used by Knex)
