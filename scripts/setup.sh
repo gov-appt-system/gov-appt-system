@@ -34,6 +34,6 @@ fi
 echo ""
 echo "Done. Next steps:"
 echo "  1. Edit packages/backend/.env with your Supabase credentials"
-echo "  2. Run migrations:  cd packages/backend && pnpm run migrate"
-echo "  3. (Optional) Seed: cd packages/backend && pnpm run seed"
+echo "  2. Apply schema:    Run SQL files in packages/backend/src/db/schema/ (001→006) via Supabase Dashboard or CLI"
+echo "  3. (Optional) Seed: Run 007_seed_dev_accounts.sql after generating real bcrypt hashes"
 echo "  4. Start backend:   cd packages/backend && pnpm run dev"
