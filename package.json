@@ -1,0 +1,17 @@
+{
+  "name": "appointment-booking-system",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "pnpm --recursive test",
+    "build": "pnpm --recursive build",
+    "dev": "pnpm --recursive dev"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

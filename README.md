@@ -1,605 +1,222 @@
 # Appointment Booking System
 
-A comprehensive web-based appointment scheduling system designed for government agencies, featuring role-based access control, real-time availability management, and automated notifications.
+A government agency appointment scheduling system with role-based access control, real-time availability, and email notifications.
 
-## Development Framework
+> **Status:** Backend API in active development. Frontend not yet started.
 
-This project follows a **spec-driven development methodology** with comprehensive requirements analysis, formal design documentation, and property-based testing to ensure system correctness and reliability.
+---
 
-### Development Approach
-- **Requirements-First**: All features are traced back to documented requirements
-- **Property-Based Testing**: Universal correctness properties validated across all inputs
-- **Incremental Development**: Bottom-up implementation from database to frontend
-- **Continuous Integration**: Automated testing and validation at each development stage
+## Prerequisites
 
-## Project Architecture
+- Node.js 18+
+- pnpm (`npm install -g pnpm`)
+- A [Supabase](https://supabase.com) project (free tier works)
 
-The system implements a modern **three-tier architecture** with clear separation of concerns:
+---
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Client Layer  │    │ Application     │    │   Data Layer    │
-│                 │    │     Layer       │    │                 │
-│ • React Frontend│◄──►│ • Express API   │◄──►│ • PostgreSQL    │
-│ • shadcn/ui     │    │ • Auth Service  │    │ • Email Service │
-│ • Tailwind CSS  │    │ • RBAC System   │    │ • Audit Logs    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-### Core Components
-- **Authentication Service**: JWT-based session management with secure password handling
-- **RBAC Controller**: Role-based access control for Admin, Staff, Manager, and Client roles
-- **Calendar Service**: Real-time availability management with double-booking prevention
-- **Notification Service**: Automated email notifications for all appointment activities
-- **Audit Logger**: Comprehensive activity logging for compliance and troubleshooting
-
-## Tech Stack
-
-### Frontend
-- **React 17** with TypeScript for type safety and stability
-- **shadcn/ui** for modern, accessible component library
-- **Tailwind CSS** for utility-first styling
-- **React Router** for client-side routing
-- **Axios** for API communication
-- **React Hook Form** for form validation
-
-### Backend
-- **Node.js** with Express.js framework
-- **TypeScript** for type safety and better development experience
-- **JWT** for secure session management
-- **bcrypt** for password hashing
-- **Joi** for request validation
-- **node-cron** for scheduled tasks
-
-### Database & Infrastructure
-- **PostgreSQL 14+** for relational data storage
-- **Knex.js** for database migrations and query building
-- **Winston** for structured logging
-- **SendGrid** (or similar) for email delivery
-- **Environment-based configuration** for different deployment stages
-
-## Developer Requirements
-
-### Prerequisites
-- **Node.js** 18+ and npm/yarn
-- **PostgreSQL** 14+ installed and running
-- **Git** for version control
-- **Code Editor** with TypeScript support (VS Code recommended)
-
-### Development Environment Setup
-
-#### Prerequisites Installation
-```bash
-# Install Node.js 18+ (using nvm recommended)
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-nvm install 18
-nvm use 18
-
-# Install PostgreSQL (Windows)
-# Download from: https://www.postgresql.org/download/windows/
-# Or use chocolatey: choco install postgresql
-
-# Verify installations
-node --version  # Should be 18+
-npm --version   # Should be 8+
-psql --version  # Should be 14+
-```
-
-#### Project Setup
-```bash
-# 1. Clone the repository
-git clone <repository-url>
-cd appointment-booking-system
-
-# 2. Set up PostgreSQL database
-# Create database user and database
-psql -U postgres
-CREATE USER appointment_user WITH PASSWORD 'your_password';
-CREATE DATABASE appointment_booking OWNER appointment_user;
-GRANT ALL PRIVILEGES ON DATABASE appointment_booking TO appointment_user;
-\q
-
-# 3. Backend setup
-cd backend
-npm install
-
-# Copy and configure environment variables
-copy .env.example .env
-# Edit .env file with your database credentials and other settings
-
-# Run database migrations
-npm run migrate
-
-# Optional: Seed database with sample data
-npm run seed
-
-# 4. Frontend setup
-cd ../frontend
-npm install
-
-# Initialize shadcn/ui components
-npx shadcn-ui@latest init
-# Follow prompts to configure Tailwind CSS and component library
-
-# 5. Start development servers
-# Terminal 1 - Backend (runs on port 3001)
-cd backend
-npm run dev
-
-# Terminal 2 - Frontend (runs on port 3000)
-cd frontend
-npm start
-```
-
-#### Quick Start Commands
-```bash
-# After initial setup, use these commands to start development:
-
-# Start both servers concurrently (from root directory)
-npm run dev
-
-# Or start individually:
-npm run dev:backend   # Backend only
-npm run dev:frontend  # Frontend only
-
-# Run tests
-npm run test:all      # All tests
-npm run test:backend  # Backend tests only
-npm run test:frontend # Frontend tests only
-
-# Database operations
-npm run migrate       # Run migrations
-npm run migrate:rollback  # Rollback last migration
-npm run seed         # Seed database
-npm run db:reset     # Reset database (migrate + seed)
-```
-
-### Development Scripts
-```bash
-# Root directory scripts
-npm run dev              # Start both backend and frontend
-npm run dev:backend      # Start backend only (port 3001)
-npm run dev:frontend     # Start frontend only (port 3000)
-npm run test:all         # Run all tests
-npm run build:all        # Build both projects for production
-npm run lint:all         # Lint all code
-
-# Backend specific (run from /backend)
-npm run dev              # Start development server with hot reload
-npm run build            # Build for production
-npm run start            # Start production server
-npm run test             # Run unit tests
-npm run test:pbt         # Run property-based tests
-npm run test:integration # Run integration tests
-npm run migrate          # Run database migrations
-npm run migrate:rollback # Rollback last migration
-npm run seed             # Seed database with sample data
-npm run db:reset         # Reset database (migrate + seed)
-npm run lint             # Code linting
-npm run format           # Code formatting
-
-# Frontend specific (run from /frontend)
-npm start                # Start development server (port 3000)
-npm run build            # Build for production
-npm run test             # Run component tests
-npm run test:coverage    # Run tests with coverage report
-npm run lint             # Code linting
-npm run format           # Code formatting
-npm run storybook        # Start Storybook for component development
-```
-
-## Best Practices
-
-### Code Quality
-- **TypeScript Strict Mode**: All code must pass strict TypeScript compilation
-- **ESLint Configuration**: Follow established linting rules for consistency
-- **Prettier Formatting**: Automated code formatting on save
-- **Git Hooks**: Pre-commit hooks for linting and testing
-
-### Frontend Development with shadcn/ui
-- **Component Library**: Use shadcn/ui components for consistent, accessible UI
-- **Styling**: Tailwind CSS utility classes for custom styling
-- **Component Structure**: Follow shadcn/ui patterns for component composition
-- **Theming**: Use CSS variables for consistent color schemes and spacing
+## Quick Setup (after cloning)
 
 ```bash
-# Adding new shadcn/ui components
-npx shadcn-ui@latest add button
-npx shadcn-ui@latest add form
-npx shadcn-ui@latest add table
-npx shadcn-ui@latest add dialog
-
-# Example component usage
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+bash scripts/setup.sh
 ```
 
-### Testing Strategy
-- **Unit Tests**: Test individual functions and components
-- **Property-Based Tests**: Validate universal system properties
-- **Integration Tests**: Test API endpoints and database interactions
-- **End-to-End Tests**: Validate complete user workflows
+This will:
+- Verify pnpm are available
+- Run `pnpm install` across all packages
+`packages/backend/.env` if it doesn't exist yet
 
-### Frontend Development with shadcn/ui
-- **Component Library**: Use shadcn/ui components for consistent, accessible UI
-- **Styling**: Tailwind CSS utility classes for custom styling
-- **Component Structure**: Follow shadcn/ui patterns for component composition
-- **Theming**: Use CSS variables for consistent color schemes and spacing
+---
+
+## Manual Setup
 
 ```bash
-# Adding new shadcn/ui components
-npx shadcn-ui@latest add button
-npx shadcn-ui@latest add form
-npx shadcn-ui@latest add table
-npx shadcn-ui@latest add dialog
+# 1. Install dependencies
+pnpm install
+pnpm approve-builds
 
-# Example component usage
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-```
-- **Migration-Based Schema**: All database changes through versioned migrations
-- **Connection Pooling**: Efficient database connection management
-- **Query Optimization**: Proper indexing and query performance monitoring
-- **Data Validation**: Server-side validation for all database operations
-
-### API Design
-- **RESTful Endpoints**: Consistent REST API design patterns
-- **Request Validation**: Comprehensive input validation using Joi
-- **Error Handling**: Standardized error responses with proper HTTP status codes
-- **Rate Limiting**: Protection against abuse and DoS attacks
-
-## Security
-
-### Environment Configuration
-Create a `.env` file in the backend directory with the following variables:
-
-```env
-# Database Configuration
-DATABASE_URL=postgresql://username:password@localhost:5432/appointment_booking
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=appointment_booking
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-
-# JWT Configuration
-JWT_SECRET=your-super-secure-jwt-secret-key-here
-JWT_EXPIRES_IN=24h
-JWT_REFRESH_SECRET=your-refresh-token-secret
-
-# Email Service Configuration
-EMAIL_SERVICE=sendgrid
-EMAIL_API_KEY=your-sendgrid-api-key
-EMAIL_FROM=noreply@youragency.gov.ph
-EMAIL_FROM_NAME=Government Appointment System
-
-# Application Configuration
-NODE_ENV=development
-PORT=3001
-FRONTEND_URL=http://localhost:3000
-
-# Security Configuration
-BCRYPT_ROUNDS=12
-SESSION_TIMEOUT=1800000
-MAX_LOGIN_ATTEMPTS=5
-LOCKOUT_TIME=900000
-
-# Frontend Configuration
-REACT_APP_API_URL=http://localhost:3001/api
-REACT_APP_APP_NAME=Government Appointment System
-REACT_APP_ENVIRONMENT=development
-
-# Optional: Analytics and monitoring
-REACT_APP_ANALYTICS_ID=your-analytics-id
+# 2. Configure environment
+cp packages/backend/.env.example packages/backend/.env
+# then edit packages/backend/.env with your actual values
 ```
 
-### Security Best Practices
+### Required environment variables (`packages/backend/.env`)
 
-#### Authentication & Authorization
-- **Password Requirements**: Minimum 8 characters with mixed case and numbers
-- **JWT Tokens**: Short-lived access tokens with refresh token rotation
-- **Session Management**: Automatic logout after inactivity
-- **Role-Based Access**: Strict permission checking on all endpoints
+| Variable | Description |
+|---|---|
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase anon/public key |
+key (server-side only) |
+| `DATABASE_URL` | Direct Postgres connection string (for Knex migrations) |
+| `JWT_SECRET` | Secret for signing JWTs (min 32 chars) |
+| `JWT_EXPIRES_IN` | Token lifetime, e.g. `8h` |
+| `SENDGRID_API_KEY` | SendGrid API key for email |
+| `EMAIL_FROM` | Sender address, e.g. `noreply@youragency.gov.ph` |
+| `PORT` | Backend port (default `3000`) |
+| `FRONTEND_URL` | Used in reset-password email links |
 
-#### API Security
-- **Input Validation**: All inputs validated and sanitized
-- **SQL Injection Prevention**: Parameterized queries only
-- **XSS Protection**: Content Security Policy headers
-- **CORS Configuration**: Restricted to allowed origins only
+---
 
-#### Data Protection
-- **Password Hashing**: bcrypt with high salt rounds
-- **Sensitive Data**: Never log passwords or tokens
-- **Database Encryption**: Encrypt sensitive fields at rest
-- **Audit Logging**: All user actions logged for compliance
+## Database
 
-#### Infrastructure Security
-```javascript
-// Example security middleware configuration
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"]
-    }
-  }
-}));
+```bash
+cd packages/backend
 
-app.use(rateLimit({
-  windowMs: process.env.RATE_LIMIT_WINDOW,
-  max: process.env.RATE_LIMIT_MAX_REQUESTS
-}));
+# Apply all migrations
+te
+
+# Rollback last migration
+pnpm run migrate:rollback
+
+# Seed dev accounts (client, staff, manager, admin)
+pnpm run seed
+
+# Reset database (rollback all + re-migrate + seed)
+pnpm run db:reset
 ```
 
-## Repository Structure
+---
+
+## Running the Backend
+
+```bash
+cd packages/backend
+pnpm run dev
+```
+
+Server starts at `http://localhost:3000`
+
+Health check: `GET http://localhost:3000/health`
+
+---
+
+## Testing
+
+```bash
+# All tests (from root)
+pnpm test
+
+# Backend only
+cd packages/backend && pnpm test
+
+# eh since backend branch to (root folder works too_
+cd ..
+pnpm --filter backend test 2>&1
+```
+
+Tests use [Vitest](https://vitest.dev/) and run once (no watch mode).
+
+---
+
+## Project Structure
 
 ```
 appointment-booking-system/
-├── README.md
-├── .gitignore
-├── .env.example
-│
-├── backend/                          # Node.js/Express API
-│   ├── src/
-│   │   ├── controllers/              # API route handlers
-│   │   │   ├── auth.controller.ts
-│   │   │   ├── appointments.controller.ts
-│   │   │   ├── users.controller.ts
-│   │   │   └── services.controller.ts
-│   │   ├── services/                 # Business logic layer
-│   │   │   ├── auth.service.ts
-│   │   │   ├── calendar.service.ts
-│   │   │   ├── notification.service.ts
-│   │   │   ├── audit.service.ts
-│   │   │   └── rbac.service.ts
-│   │   ├── models/                   # Data models and types
-│   │   │   ├── user.model.ts
-│   │   │   ├── appointment.model.ts
-│   │   │   └── service.model.ts
-│   │   ├── middleware/               # Express middleware
-│   │   │   ├── auth.middleware.ts
-│   │   │   ├── rbac.middleware.ts
-│   │   │   └── validation.middleware.ts
-│   │   ├── routes/                   # API route definitions
-│   │   │   ├── auth.routes.ts
-│   │   │   ├── appointments.routes.ts
-│   │   │   ├── users.routes.ts
-│   │   │   └── services.routes.ts
-│   │   ├── database/                 # Database configuration
-│   │   │   ├── connection.ts
-│   │   │   ├── migrations/
-│   │   │   └── seeds/
-│   │   ├── utils/                    # Utility functions
-│   │   │   ├── logger.ts
-│   │   │   ├── validators.ts
-│   │   │   └── helpers.ts
-│   │   └── app.ts                    # Express app configuration
-│   ├── tests/                        # Backend tests
-│   │   ├── unit/                     # Unit tests
-│   │   ├── integration/              # Integration tests
-│   │   └── property/                 # Property-based tests
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── .env
-│
-├── frontend/                         # React application
-│   ├── public/
-│   │   ├── index.html
-│   │   └── favicon.ico
-│   ├── src/
-│   │   ├── components/               # Reusable UI components
-│   │   │   ├── ui/                   # shadcn/ui components
-│   │   │   │   ├── button.tsx
-│   │   │   │   ├── input.tsx
-│   │   │   │   ├── form.tsx
-│   │   │   │   └── table.tsx
-│   │   │   ├── common/               # Shared components
-│   │   │   ├── auth/                 # Authentication components
-│   │   │   ├── appointments/         # Appointment-related components
-│   │   │   └── admin/                # Admin interface components
-│   │   ├── pages/                    # Page-level components
-│   │   │   ├── LoginPage.tsx
-│   │   │   ├── DashboardPage.tsx
-│   │   │   ├── BookingPage.tsx
-│   │   │   └── AdminPage.tsx
-│   │   ├── hooks/                    # Custom React hooks
-│   │   │   ├── useAuth.ts
-│   │   │   ├── useAppointments.ts
-│   │   │   └── useApi.ts
-│   │   ├── services/                 # API service layer
-│   │   │   ├── api.service.ts
-│   │   │   ├── auth.service.ts
-│   │   │   └── appointments.service.ts
-│   │   ├── contexts/                 # React contexts
-│   │   │   ├── AuthContext.tsx
-│   │   │   └── ThemeContext.tsx
-│   │   ├── types/                    # TypeScript type definitions
-│   │   │   ├── auth.types.ts
-│   │   │   ├── appointment.types.ts
-│   │   │   └── api.types.ts
-│   │   ├── utils/                    # Utility functions
-│   │   │   ├── formatters.ts
-│   │   │   ├── validators.ts
-│   │   │   └── constants.ts
-│   │   ├── styles/                   # Global styles and themes
-│   │   │   ├── globals.css
-│   │   │   └── components.css
-│   │   ├── lib/                      # shadcn/ui utilities
-│   │   │   └── utils.ts
-│   │   ├── App.tsx                   # Main App component
-│   │   └── index.tsx                 # Application entry point
-│   ├── tests/                        # Frontend tests
-│   │   ├── components/               # Component tests
-│   │   ├── pages/                    # Page tests
-│   │   └── utils/                    # Utility tests
-│   ├── components.json               # shadcn/ui configuration
-│   ├── tailwind.config.js            # Tailwind CSS configuration
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── .env
-│
-├── database/                         # Database-related files
-│   ├── migrations/                   # Database migration files
-│   ├── seeds/                        # Database seed files
-│   └── schema.sql                    # Complete database schema
-│
-├── docs/                            # Project documentation
-│   ├── api/                         # API documentation
-│   ├── deployment/                  # Deployment guides
-│   └── user-guides/                 # User manuals
-│
-└── .kiro/                           # Kiro spec files
-    └── specs/
-        └── appointment-booking-system/
-            ├── requirements.md       # System requirements
-            ├── design.md            # Technical design
-            └── tasks.md             # Implementation tasks
+├── packages/
+│   ├── backend/          # Express + TypeScript API
+│   │   ├── src/
+│   │   │   ├── config/   # Supabase client, logger
+│   │   │   ├── db/       # Knex migrations and seeds
+│   │   │   ├── services/ # Auth, RBAC, Audit, Notification
+│   │   │   ├── types/    # Shared TypeScript types
+ yet started)
+├── scripts/
+│   └── setup.sh          # One-time setup script
+└── pnpm-workspace.yaml
 ```
 
-## Getting Started
+---
 
-### First Time Setup (Complete Guide)
+## Troubleshooting
 
-1. **Install Prerequisites**
-   ```bash
-   # Install Node.js 18+ (recommended via nvm)
-   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-   nvm install 18 && nvm use 18
-   
-   # Install PostgreSQL 14+
-   # Windows: Download from https://www.postgresql.org/download/windows/
-   # macOS: brew install postgresql
-   # Linux: sudo apt-get install postgresql postgresql-contrib
-   ```
-
-2. **Clone and Setup Project**
-   ```bash
-   git clone <repository-url>
-   cd appointment-booking-system
-   
-   # Install root dependencies (for concurrent scripts)
-   npm install
-   ```
-
-3. **Database Setup**
-   ```bash
-   # Start PostgreSQL service
-   # Windows: Start via Services or pgAdmin
-   # macOS/Linux: brew services start postgresql OR sudo service postgresql start
-   
-   # Create database and user
-   psql -U postgres
-   CREATE USER appointment_user WITH PASSWORD 'secure_password_123';
-   CREATE DATABASE appointment_booking OWNER appointment_user;
-   GRANT ALL PRIVILEGES ON DATABASE appointment_booking TO appointment_user;
-   \q
-   ```
-
-4. **Backend Configuration**
-   ```bash
-   cd backend
-   npm install
-   
-   # Copy and edit environment file
-   copy .env.example .env  # Windows
-   # cp .env.example .env  # macOS/Linux
-   
-   # Edit .env with your database credentials
-   # Update DATABASE_URL, JWT_SECRET, EMAIL_API_KEY, etc.
-   
-   # Run database migrations
-   npm run migrate
-   
-   # Optional: Add sample data
-   npm run seed
-   ```
-
-5. **Frontend Configuration**
-   ```bash
-   cd ../frontend
-   npm install
-   
-   # Initialize shadcn/ui (follow prompts)
-   npx shadcn-ui@latest init
-   # Choose: TypeScript, Tailwind CSS, src/components/ui, CSS variables
-   
-   # Add essential components
-   npx shadcn-ui@latest add button input form table dialog card
-   
-   # Copy environment file
-   copy .env.example .env  # Windows
-   # Edit with your API URL (usually http://localhost:3001/api)
-   ```
-
-6. **Start Development**
-   ```bash
-   # From root directory - starts both servers
-   npm run dev
-   
-   # Or start individually:
-   # Terminal 1: npm run dev:backend
-   # Terminal 2: npm run dev:frontend
-   
-   # Access the application:
-   # Frontend: http://localhost:3000
-   # Backend API: http://localhost:3001/api
-   ```
-
-### Daily Development Workflow
-
+**Port already in use:**
 ```bash
-# Start development (from root directory)
-npm run dev
-
-# Run tests before committing
-npm run test:all
-
-# Check code quality
-npm run lint:all
-
-# Database operations (from backend directory)
-cd backend
-npm run migrate        # Apply new migrations
-npm run seed          # Add sample data
-npm run db:reset      # Reset database completely
+# Find the process
+lsof -i :3000
+# Kill it
+kill -9 <PID>
 ```
 
-### Troubleshooting Common Issues
+**Supabase connection failing:**
+- Double-check `DATABASE_URL` format: `postgresql://postgres:<password>@db.<project-ref>.supabase.co:5432/postgres`
+- Make sure your Supabase project is active at https://app.supabase.com
 
-**Database Connection Issues:**
+**pnpm not found:**
 ```bash
-# Check if PostgreSQL is running
-# Windows: Check Services for "postgresql"
-# macOS: brew services list | grep postgresql
-# Linux: sudo service postgresql status
-
-# Test database connection
-psql -U appointment_user -d appointment_booking -h localhost
+npm install -g pnpm
 ```
+# Rundown of Major Backend Files
 
-**Port Already in Use:**
-```bash
-# Find and kill process using port 3000 or 3001
-# Windows: netstat -ano | findstr :3000
-# macOS/Linux: lsof -ti:3000 | xargs kill
-```
 
-**shadcn/ui Component Issues:**
-```bash
-# Reinstall shadcn/ui components
-npx shadcn-ui@latest add button --overwrite
-```
+## Entry Point
 
-## Contributing
+### `src/index.ts`
+* Bootstraps the Express app, attaches JSON body parsing, and exposes a `GET /health` endpoint.
+* Starts the server on `PORT` (default `3000`).
+* **Note:** No routes are wired yet — API routes are the next implementation phase (tasks 10–14).
 
-1. Follow the established coding standards and best practices
-2. Write tests for all new functionality
-3. Update documentation for any API or architectural changes
-4. Ensure all security requirements are met
-5. Submit pull requests with clear descriptions and test coverage
+---
 
-## License
+## Config
 
-This project is developed for government use and follows applicable government software licensing requirements.
+### `src/config/supabase.ts`
+* Creates a **singleton** Supabase client using the service role key.
+* The service role key bypasses Row Level Security — intentionally used only server-side.
+* Throws immediately on startup if `SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY` are missing.
+
+### `src/config/logger.ts`
+* Creates a **Winston logger** singleton.
+* **In development:** Colorized output with `debug` level.
+* **In production:** Plain text with `info` level only.
+* Includes stack traces for `Error` objects.
+
+---
+
+## Services
+
+### `src/services/auth.ts`
+* `hashPassword` — bcrypt hashes with 12 rounds.
+* `authenticate` — Looks up user by email, checks `is_active`/`archived_at`, compares bcrypt hash, and returns a signed JWT on success.
+* `createSession` / `validateSession` — Signs/verifies HS256 JWTs; blocklisted tokens are rejected via an in-memory `Set`.
+* `terminateSession` — Adds the token to the blocklist (logout).
+* `registerClient` — Validates password complexity, checks for duplicate email, inserts into `users` then `clients`; rolls back the `users` row if the `clients` insert fails.
+* `changePassword` — Verifies current password before updating; enforces complexity on the new password.
+* `sendPasswordResetEmail` / `resetPassword` — Generates a `crypto.randomBytes` token stored in an in-memory `Map` with a 1-hour expiry; delegates email sending to `notification.ts`.
+
+### `src/services/rbac.ts`
+* Holds the full permission matrix as a static lookup table (`PERMISSION_MATRIX`) mapping `resource` → `action` → allowed `roles[]`.
+* `hasPermission(role, resource, action)` — Pure synchronous check against the matrix.
+* `enforcePermission(userId, resource, action)` — Fetches the user from DB, checks `is_active`/`archived_at`, then calls `hasPermission`; throws a 403 error on denial.
+* `canAccessService(userId, serviceId)` — Clients always pass; staff/managers must have an active `service_assignments` row; admins are always denied (by design).
+
+### `src/services/calendar.ts`
+* `getAvailableSlots(serviceId, date)` — Generates all time slots for the day based on `start_time`, `end_time`, and `duration`; counts existing non-archived appointments per slot to compute booked vs. capacity.
+* `checkSlotAvailability` — Counts active appointments in a slot window and compares against capacity.
+* `reserveSlot` — Attempts an atomic reservation via a Postgres RPC (`reserve_appointment_slot`); falls back to `checkSlotAvailability` if the RPC isn't deployed (dev only).
+* `releaseSlot` — No-op; capacity is derived from live appointment counts so no explicit release is needed.
+* `isWithinServiceHours` — Checks `days_of_week`, `start_time`, and `end_time` against a given datetime (all UTC).
+
+### `src/services/audit.ts`
+* `logUserAction` — Inserts a row into `audit_logs` with actor, action, resource, details, and IP.
+* `logSystemEvent` — Same but with no user actor (`user_id = null`).
+* `logError` — Logs error message + stack trace as a system event.
+* `getAuditLogs(filters)` — Queries `audit_logs` with optional filters (userId, action, resource, date range), ordered newest-first.
+* `exportAuditLogs(startDate, endDate)` — Returns a CSV string of logs in the date range.
+* **Note:** Audit failures never throw — they log to Winston instead so they don't break the caller.
+
+### `src/services/notification.ts`
+* Uses Nodemailer with SendGrid SMTP relay (falls back to local SMTP like Mailhog in dev).
+* `sendBookingConfirmation` — Sends a branded HTML email with tracking number, service, date/time, and status.
+* `sendStatusUpdate` — Sends a status change email with a human-readable message per status.
+* `sendPasswordResetEmail` — Sends a reset link button email valid for 1 hour.
+* `logEmailFailure` / `retryFailedEmails` — Failed emails go into an in-memory queue; `retryFailedEmails` retries up to `MAX_RETRY_COUNT` times (default 3, configurable via `EMAIL_MAX_RETRIES`).
+
+---
+
+## Utils
+
+### `src/utils/password.ts`
+* `validatePasswordComplexity(password)` — Returns `true` only if the password is ≥8 chars, has an uppercase letter, a lowercase letter, and a digit.
+
+### `src/utils/tracking.ts`
+* `generateTrackingNumber()` — Produces `APT-YYYYMMDD-XXXXX` where the suffix is 5 random uppercase alphanumeric characters.
+* `validateTrackingNumber(str)` — Regex check against the `APT-YYYYMMDD-XXXXX` format.
