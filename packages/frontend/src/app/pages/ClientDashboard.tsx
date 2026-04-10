@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Clock, CheckCircle, XCircle } from 'lucide-react';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { StatCard } from '../components/Card';
 import { Card } from '../components/ui/card';

@@ -157,15 +157,15 @@ Incremental build order: database schema → backend services → REST API endpo
   - Ensure all tests pass; ask the user if questions arise before continuing.
 
 - [ ] 16. Frontend: project setup and shared infrastructure
-  - [ ] 16.1 Initialize React + TypeScript app in `packages/frontend` using Vite; install shadcn/ui, Tailwind CSS, React Router, Axios, React Hook Form
+  - [x] 16.1 Initialize React + TypeScript app in `packages/frontend` using Vite; install shadcn/ui, Tailwind CSS, React Router, Axios, React Hook Form
     - _Requirements: 1.1_
-  - [ ] 16.2 Create Axios instance with base URL from env, JWT interceptor (attaches `Authorization` header), and 401 redirect to login
+  - [x] 16.2 Create Axios instance with base URL from env, JWT interceptor (attaches `Authorization` header), and 401 redirect to login
     - _Requirements: 1.1, 1.3_
-  - [ ] 16.3 Create `AuthContext` (stores user role and token), `ProtectedRoute` component (redirects unauthenticated users), and role-guard HOC/wrapper
+  - [x] 16.3 Create `AuthContext` (stores user role and token), `ProtectedRoute` component (redirects unauthenticated users), and role-guard HOC/wrapper
     - _Requirements: 1.3_
 
 - [ ] 17. Frontend: authentication pages
-  - [ ] 17.1 Build `LoginPage` — email/password form, calls `POST /api/auth/login`, stores token in `AuthContext`, redirects to role-appropriate dashboard
+  - [x] 17.1 Build `LoginPage` — email/password form, calls `POST /api/auth/login`, stores token in `AuthContext`, redirects to role-appropriate dashboard
     - _Requirements: 1.1, 1.2_
   - [ ] 17.2 Build `RegisterPage` (client self-registration) — full registration form with client fields, calls `POST /api/auth/register`, enforces password complexity in UI
     - _Requirements: 1.5, 1.6_
@@ -173,25 +173,25 @@ Incremental build order: database schema → backend services → REST API endpo
     - _Requirements: 1.7_
 
 - [ ] 18. Frontend: client-facing pages
-  - [ ] 18.1 Build `BookingCalendarPage` — fetches active services (`GET /api/services`), displays available time slots from `GET /api/services/:id/slots`, prevents selection of full slots
+  - [x] 18.1 Build `BookingCalendarPage` — fetches active services (`GET /api/services`), displays available time slots from `GET /api/services/:id/slots`, prevents selection of full slots
     - _Requirements: 2.1, 2.2_
-  - [ ] 18.2 Build `BookingFormPage` — collects personal details and required documents, submits `POST /api/appointments`, displays returned tracking number and confirmation
+  - [x] 18.2 Build `BookingFormPage` — collects personal details and required documents, submits `POST /api/appointments`, displays returned tracking number and confirmation
     - _Requirements: 2.3, 2.4, 2.5_
-  - [ ] 18.3 Build `AppointmentHistoryPage` — lists client's appointments (`GET /api/appointments`), supports search by tracking number and date range
+  - [x] 18.3 Build `AppointmentHistoryPage` — lists client's appointments (`GET /api/appointments`), supports search by tracking number and date range
     - _Requirements: 4.1, 4.2, 4.4_
   - [ ] 18.4 Build `AppointmentDetailPage` — read-only view of a single appointment with status timeline (`GET /api/appointments/:id`)
     - _Requirements: 4.3_
-  - [ ] 18.5 Build `ClientProfilePage` — view/edit profile, change password, deactivate account
+  - [x] 18.5 Build `ClientProfilePage` — view/edit profile, change password, deactivate account
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
 - [ ] 19. Frontend: staff and manager pages
-  - [ ] 19.1 Build `StaffDashboardPage` — appointment queue for assigned services (`GET /api/appointments`), filterable by status
+  - [x] 19.1 Build `StaffDashboardPage` — appointment queue for assigned services (`GET /api/appointments`), filterable by status
     - _Requirements: 3.1_
-  - [ ] 19.2 Build `AppointmentProcessingPage` — form to update appointment status, add remarks; calls `PUT /api/appointments/:id`; shows validation error if outside service hours
+  - [x] 19.2 Build `AppointmentProcessingPage` — form to update appointment status, add remarks; calls `PUT /api/appointments/:id`; shows validation error if outside service hours
     - _Requirements: 3.2, 3.3, 3.4, 3.5, 3.6_
-  - [ ] 19.3 Build `ServiceManagementPage` (Manager only) — list services, create/edit service form (operating hours, capacity, required documents), archive action
+  - [x] 19.3 Build `ServiceManagementPage` (Manager only) — list services, create/edit service form (operating hours, capacity, required documents), archive action
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
-  - [ ] 19.4 Build `StaffAssignmentPage` (Manager only) — view staff assigned to a service, assign new staff, remove assignment
+  - [x] 19.4 Build `StaffAssignmentPage` (Manager only) — view staff assigned to a service, assign new staff, remove assignment
     - _Requirements: 6.5, 6.6, 6.7_
 
 - [ ] 20. Frontend: admin pages

@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { RootLayout } from './components/RootLayout';
 import { LoginPage } from './pages/LoginPage';
 import { ClientDashboard } from './pages/ClientDashboard';
@@ -13,7 +13,7 @@ import { ServiceManagementPage } from './pages/ServiceManagementPage';
 import { StaffManagementPage } from './pages/StaffManagementPage';
 import { ProfilePage } from './pages/ProfilePage';
 
-export const router = createBrowserRouter([
+export const router: ReturnType<typeof createBrowserRouter> = createBrowserRouter([
   {
     path: '/',
     element: <RootLayout />,

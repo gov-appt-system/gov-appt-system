@@ -1,4 +1,4 @@
-import { useParams, useLocation, Link } from 'react-router';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import { CheckCircle, Calendar, Clock, MapPin, FileText, Eye } from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Card } from '../components/Card';

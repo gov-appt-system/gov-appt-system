@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   CalendarPlus, 
@@ -100,7 +100,8 @@ export function Sidebar() {
           {filteredMenuItems.map((item) => {
             const Icon = item.icon;
             const itemPath = item.path === '/dashboard' ? getDashboardPath() : item.path;
-            const isActive = location.pathname === itemPath;
+            const isActive = location.pathname === itemPath || 
+              (item.path === '/dashboard' && (location.pathname === '/dashboard' || location.pathname === '/staff-dashboard'));
             
             return (
               <Link

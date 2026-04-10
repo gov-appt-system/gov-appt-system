@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { ChevronRight, ChevronLeft, FileText, Shield, Heart, AlertTriangle, Upload, Clipboard } from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';

@@ -1,5 +1,5 @@
 import { Clock, CheckCircle, Users, Calendar } from 'lucide-react';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { StatCard } from '../components/Card';
 import { Card } from '../components/Card';

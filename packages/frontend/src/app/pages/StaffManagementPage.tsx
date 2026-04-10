@@ -262,11 +262,9 @@ export function StaffManagementPage() {
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="role">Role</Label>
               <Select
-                id="role"
-                className="col-span-3"
-                {...form.register('role')}
+                onValueChange={(val) => form.setValue('role', val)}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -340,11 +338,10 @@ export function StaffManagementPage() {
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="role">Role</Label>
               <Select
-                id="role"
-                className="col-span-3"
-                {...editForm.register('role')}
+                onValueChange={(val) => editForm.setValue('role', val)}
+                defaultValue={selectedStaff?.role}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
