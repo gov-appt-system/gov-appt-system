@@ -25,7 +25,7 @@ export function TopBar() {
       <div className="flex items-center gap-2 md:gap-4">
         {user?.role === 'client' && (
           <Button
-            onClick={() => navigate('/book-appointment')}
+            onClick={() => navigate('/book')}
             className="bg-[var(--gov-primary)] hover:bg-[var(--gov-primary)]/90"
           >
             <Calendar size={18} className="mr-2" />
