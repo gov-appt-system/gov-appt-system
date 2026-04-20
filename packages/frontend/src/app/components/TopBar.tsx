@@ -1,15 +1,26 @@
-import { Bell, Search, Calendar, User } from 'lucide-react';
+import { Bell, Search, Calendar, User, Menu } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { useAuth } from '../context/AuthContext';
+import { useSidebar } from '../context/SidebarContext';
 
 export function TopBar() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toggleSidebar } = useSidebar();
 
   return (
     <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 w-full">
       <div className="flex items-center gap-4 flex-1">
+        {/* Hamburger — mobile only, hidden on desktop since sidebar is always visible */}
+        <button
+          onClick={toggleSidebar}
+          className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+          aria-label="Toggle sidebar"
+        >
+          <Menu size={24} className="text-gray-700" />
+        </button>
+
         <div className="flex-1 max-w-xl">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -21,8 +32,9 @@ export function TopBar() {
           </div>
         </div>
       </div>
-
+    
       <div className="flex items-center gap-2 md:gap-4">
+        {/*
         {user?.role === 'client' && (
           <Button
             onClick={() => navigate('/book')}
@@ -32,17 +44,17 @@ export function TopBar() {
             <span className="hidden md:inline">Book New Appointment</span>
           </Button>
         )}
-        
-        <Link 
-          to="/notifications" 
+
+        <Link
+          to="/notifications"
           className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
         >
           <Bell size={20} className="text-gray-600" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
         </Link>
-
-        <Link 
-          to="/profile" 
+          */}
+        <Link
+          to="/profile"
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
         >
           <User size={20} className="text-gray-600" />

@@ -1,28 +1,19 @@
 import { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
-import { useSidebar } from '../context/SidebarContext';
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { isOpen } = useSidebar();
-
   return (
     <div className="min-h-screen bg-[var(--gov-bg)] flex">
-      {/* Fixed sidebar */}
+      {/* Desktop: permanent sidebar sits in the flex row and pushes content */}
+      {/* Mobile: sidebar renders as a fixed overlay, takes no space in flow */}
       <Sidebar />
 
-      {/* Spacer that mirrors the fixed sidebar width — keeps content from going under it */}
-      <div
-        className={`flex-shrink-0 transition-all duration-300 ${
-          isOpen ? 'w-64' : 'w-20'
-        }`}
-      />
-
-      {/* Main content — min-w-0 prevents flex child from exceeding remaining space */}
+      {/* Main content — takes remaining width on desktop, full width on mobile */}
       <div className="flex-1 min-w-0">
         <TopBar />
         <main className="p-4 md:p-8">

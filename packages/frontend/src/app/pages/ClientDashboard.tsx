@@ -43,7 +43,7 @@ export function ClientDashboard() {
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl text-[var(--gov-secondary)] mb-2">Welcome Back, {user?.name}!</h1>
-          <p className="text-gray-600">Manage your government service appointments</p>
+          <p className="text-gray-600">Manage your government service appointments here</p>
         </div>
 
         {/* Statistics */}

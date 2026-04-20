@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface SidebarContextType {
   isOpen: boolean;
@@ -10,23 +10,8 @@ interface SidebarContextType {
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
+  // Sidebar is closed by default
   const [isOpen, setIsOpen] = useState(false);
-
-  // Check screen size and set initial state
-  useEffect(() => {
-    const checkScreenSize = () => {
-      if (window.innerWidth >= 1280) {
-        setIsOpen(true);
-      } else {
-        setIsOpen(false);
-      }
-    };
-
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
 
   const toggleSidebar = () => setIsOpen(prev => !prev);
   const closeSidebar = () => setIsOpen(false);
