@@ -1,22 +1,28 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../components/DashboardLayout';
-import { StatCard } from '../components/Card';
 import { Card } from '../components/ui/card';
-import { Button } from '../components/ui/button';
 import { StatusBadge } from '../components/StatusBadge';
 import { appointmentAPI, Appointment } from '../services/api';
-import { INITIAL_NOTIFICATIONS } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+const MONTH_SHORT = [
+  'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+  'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+];
 
 export function ClientDashboard() {
   const { user } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const notifications = INITIAL_NOTIFICATIONS;
+  const [calendarDate, setCalendarDate] = useState(new Date());
 
-  // Load appointments on mount
   useEffect(() => {
     const loadAppointments = async () => {
       try {
@@ -31,154 +37,168 @@ export function ClientDashboard() {
     loadAppointments();
   }, []);
 
-  const stats = {
-    upcoming: appointments.filter(a => a.status === 'confirmed').length,
-    pending: appointments.filter(a => a.status === 'pending').length,
-    completed: appointments.filter(a => a.status === 'completed').length,
-    cancelled: appointments.filter(a => a.status === 'cancelled').length,
-  };
+  // Calendar logic
+  const today = new Date();
+  const year = calendarDate.getFullYear();
+  const month = calendarDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const appointmentDates = new Set(
+    appointments.map(a => {
+      const d = new Date(a.date);
+      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    })
+  );
+
+  const calendarDays = [
+    ...Array(firstDay).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+
+  const prevMonth = () => setCalendarDate(new Date(year, month - 1, 1));
+  const nextMonth = () => setCalendarDate(new Date(year, month + 1, 1));
 
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl text-[var(--gov-secondary)] mb-2">Welcome Back, {user?.name}!</h1>
-          <p className="text-gray-600">Manage your government service appointments</p>
-        </div>
 
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            title="Upcoming Appointments"
-            value={stats.upcoming}
-            icon={<Calendar size={24} />}
-            color="var(--gov-primary)"
-          />
-          <StatCard
-            title="Pending Requests"
-            value={stats.pending}
-            icon={<Clock size={24} />}
-            color="#eab308"
-          />
-          <StatCard
-            title="Completed"
-            value={stats.completed}
-            icon={<CheckCircle size={24} />}
-            color="#3b82f6"
-          />
-          <StatCard
-            title="Cancelled"
-            value={stats.cancelled}
-            icon={<XCircle size={24} />}
-            color="var(--gov-alert)"
-          />
-        </div>
-
-        {/* Quick Actions 
-        <Card className="p-6">
-          <h2 className="text-xl text-[var(--gov-secondary)] mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link to="/book">
-              <Button className="w-full justify-center bg-[var(--gov-primary)] hover:bg-[var(--gov-primary)]/90">
-                <CalendarPlus size={20} className="mr-2" />
-                Book New Appointment
-              </Button>
-            </Link>
-            <Link to="/track">
-              <Button variant="outline" className="w-full justify-center">
-                <Search size={20} className="mr-2" />
-                Track Appointment
-              </Button>
-            </Link>
-          </div>
-        </Card> */}
-
+        {/* Appointments + Calendar */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Appointments */}
+
+          {/* Appointments List */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl text-[var(--gov-secondary)]">Recent Appointments</h2>
-              <Link to="/appointments" className="text-[var(--gov-primary)] text-sm hover:underline">
+              <h2 className="text-xl text-[var(--gov-secondary)]">Appointments</h2>
+              <Link
+                to="/appointments"
+                className="text-[var(--gov-primary)] text-sm hover:underline"
+              >
                 View All
               </Link>
             </div>
+
             {loading ? (
               <div className="text-center py-8 text-gray-500">Loading...</div>
+            ) : appointments.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">No appointments yet.</div>
             ) : (
               <div className="space-y-3">
-                {appointments.slice(0, 3).map(appointment => (
-                  <div key={appointment.id} className="p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-500 mb-1">{appointment.trackingNumber}</p>
-                        <h3 className="text-[var(--gov-secondary)]">{appointment.service}</h3>
+                {appointments.slice(0, 3).map(appointment => {
+                  const aptDate = new Date(appointment.date);
+                  return (
+                    <div
+                      key={appointment.id}
+                      className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl"
+                    >
+                      {/* Date Badge */}
+                      <div className="flex-shrink-0 bg-[var(--gov-primary)]/20 rounded-xl px-3 py-2 text-center min-w-[56px]">
+                        <p className="text-2xl font-semibold text-[var(--gov-secondary)] leading-none">
+                          {String(aptDate.getDate()).padStart(2, '0')}
+                        </p>
+                        <p className="text-xs text-[var(--gov-primary)] font-medium mt-1">
+                          {MONTH_SHORT[aptDate.getMonth()]}
+                        </p>
                       </div>
-                      <StatusBadge status={appointment.status} />
+
+                      {/* Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <div>
+                            <h3 className="text-sm font-medium text-[var(--gov-secondary)]">
+                              {appointment.service}
+                            </h3>
+                            <p className="text-xs text-gray-400">{appointment.trackingNumber}</p>
+                          </div>
+                          <StatusBadge status={appointment.status} />
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-gray-500 mt-2">
+                          <span className="flex items-center gap-1">
+                            <Clock size={12} />
+                            {appointment.time}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MapPin size={12} />
+                            {'location' in appointment
+                              ? (appointment as any).location
+                              : 'Pasay City'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span className="flex items-center gap-1">
-                        <Calendar size={14} />
-                        {new Date(appointment.date).toLocaleDateString()}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock size={14} />
-                        {appointment.time}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </Card>
 
-          {/* Notifications */}
+          {/* Live Calendar */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl text-[var(--gov-secondary)]">Notifications</h2>
-              <Link to="/notifications" className="text-[var(--gov-primary)] text-sm hover:underline">
-                View All
-              </Link>
+              <h2 className="text-xl text-[var(--gov-secondary)]">Calendar</h2>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={prevMonth}
+                  className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button
+                  onClick={nextMonth}
+                  className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
             </div>
-            <div className="space-y-3">
-              {notifications.slice(0, 3).map(notification => (
-                <div key={notification.id} className="p-4 bg-[var(--gov-highlight)] rounded-lg">
-                  <p className="text-sm text-gray-700">{notification.message}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {new Date(notification.timestamp).toLocaleString()}
-                  </p>
-                </div>
+
+            <p className="text-sm text-gray-500 text-center mb-3">
+              {MONTH_NAMES[month]} {year}
+            </p>
+
+            <div className="grid grid-cols-7 gap-1 text-center">
+              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+                <div key={d} className="text-xs text-gray-400 py-1">{d}</div>
               ))}
+              {calendarDays.map((day, i) => {
+                if (!day) return <div key={`empty-${i}`} />;
+                const isToday =
+                  day === today.getDate() &&
+                  month === today.getMonth() &&
+                  year === today.getFullYear();
+                const hasApt = appointmentDates.has(`${year}-${month}-${day}`);
+                return (
+                  <div
+                    key={day}
+                    className={`
+                      mx-auto w-8 h-8 flex items-center justify-center text-xs rounded-lg
+                      ${isToday
+                        ? 'bg-[var(--gov-primary)] text-white font-semibold'
+                        : hasApt
+                        ? 'bg-[var(--gov-primary)]/20 text-[var(--gov-secondary)] font-semibold'
+                        : 'hover:bg-gray-100 text-gray-600'}
+                    `}
+                  >
+                    {day}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Legend */}
+            <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100">
+              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                <div className="w-3 h-3 rounded bg-[var(--gov-primary)]" />
+                Today
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                <div className="w-3 h-3 rounded bg-[var(--gov-primary)]/20" />
+                Has appointment
+              </div>
             </div>
           </Card>
-        </div>
 
-        {/* Mini Calendar */}
-        <Card className="p-6">
-          <h2 className="text-xl text-[var(--gov-secondary)] mb-4">Upcoming Schedule</h2>
-          <div className="grid grid-cols-7 gap-2 text-center">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-sm text-gray-600 py-2">{day}</div>
-            ))}
-            {Array.from({ length: 35 }, (_, i) => {
-              const day = i - 2; // Start from day -2 to fill the calendar
-              const hasAppointment = day === 15 || day === 20; // Mock appointment days
-              return (
-                <div
-                  key={i}
-                  className={`py-2 text-sm rounded-lg ${
-                    day < 1 || day > 31
-                      ? 'text-gray-300'
-                      : hasAppointment
-                      ? 'bg-[var(--gov-primary)] text-white'
-                      : 'hover:bg-gray-100'
-                  }`}
-                >
-                  {day > 0 && day <= 31 ? day : ''}
-                </div>
-              );
-            })}
-          </div>
-        </Card>
+        </div>
       </div>
     </DashboardLayout>
   );
