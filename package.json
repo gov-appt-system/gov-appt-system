@@ -21,5 +21,9 @@
       "esbuild",
       "lightningcss"
     ]
+  },
+  "dependencies": {
+    "autoprefixer": "^10.4.27",
+    "react-router-dom": "^6.30.3"
   }
 }
