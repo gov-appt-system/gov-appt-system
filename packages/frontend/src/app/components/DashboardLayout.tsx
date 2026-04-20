@@ -8,15 +8,17 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen bg-[var(--gov-bg)] flex">
-      {/* Desktop: permanent sidebar sits in the flex row and pushes content */}
-      {/* Mobile: sidebar renders as a fixed overlay, takes no space in flow */}
+    <div className="min-h-screen bg-[var(--gov-bg)]">
       <Sidebar />
 
-      {/* Main content — takes remaining width on desktop, full width on mobile */}
-      <div className="flex-1 min-w-0">
+      {/*
+        lg:pl-64 — pushes content right by exactly the sidebar width on desktop.
+        The sidebar is fixed so it's out of document flow; this padding compensates.
+        On mobile the sidebar is an overlay so no padding needed.
+      */}
+      <div className="lg:pl-64 flex flex-col min-h-screen">
         <TopBar />
-        <main className="p-4 md:p-8">
+        <main className="flex-1 p-4 md:p-8">
           {children}
         </main>
       </div>

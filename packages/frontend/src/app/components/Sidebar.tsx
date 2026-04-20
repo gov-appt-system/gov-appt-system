@@ -23,15 +23,15 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { icon: LayoutDashboard, label: 'Dashboard',         path: '/dashboard',  roles: ['client', 'staff', 'manager', 'admin'] },
-  { icon: CalendarPlus,   label: 'Book Appointment',   path: '/book',       roles: ['client'] },
+  { icon: LayoutDashboard, label: 'Dashboard',         path: '/dashboard',    roles: ['client', 'staff', 'manager', 'admin'] },
+  { icon: CalendarPlus,   label: 'Book Appointment',   path: '/book',         roles: ['client'] },
   { icon: Clock,          label: 'My Appointments',    path: '/appointments', roles: ['client'] },
-  { icon: Calendar,       label: 'Calendar',           path: '/calendar',   roles: ['client', 'staff', 'manager', 'admin'] },
-  { icon: FileText,       label: 'Process Requests',   path: '/process',    roles: ['staff', 'manager', 'admin'] },
-  { icon: Briefcase,      label: 'Service Management', path: '/services',   roles: ['manager', 'admin'] },
-  { icon: Users,          label: 'Staff Management',   path: '/staff',      roles: ['admin'] },
+  { icon: Calendar,       label: 'Calendar',           path: '/calendar',     roles: ['client', 'staff', 'manager', 'admin'] },
+  { icon: FileText,       label: 'Process Requests',   path: '/process',      roles: ['staff', 'manager', 'admin'] },
+  { icon: Briefcase,      label: 'Service Management', path: '/services',     roles: ['manager', 'admin'] },
+  { icon: Users,          label: 'Staff Management',   path: '/staff',        roles: ['admin'] },
   { icon: Bell,           label: 'Notifications',      path: '/notifications', roles: ['client', 'staff', 'manager', 'admin'] },
-  { icon: User,           label: 'Profile',            path: '/profile',    roles: ['client', 'staff', 'manager', 'admin'] },
+  { icon: User,           label: 'Profile',            path: '/profile',      roles: ['client', 'staff', 'manager', 'admin'] },
 ];
 
 const SidebarContent = ({
@@ -51,7 +51,7 @@ const SidebarContent = ({
   user: { name?: string; role?: string } | null;
   handleLogout: () => void;
 }) => (
-  <div className="h-full bg-[var(--gov-secondary)] text-white flex flex-col w-64">
+  <div className="flex flex-col h-full w-64 bg-[var(--gov-secondary)] text-white">
     {/* Header */}
     <div className="border-b border-white/10 flex items-center gap-3 p-4 h-16 flex-shrink-0">
       <div>
@@ -62,8 +62,8 @@ const SidebarContent = ({
       </div>
     </div>
 
-    {/* Navigation */}
-    <nav className="flex-1 overflow-y-auto py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    {/* Navigation — scrollable, takes remaining space */}
+    <nav className="flex-1 overflow-y-auto py-4 min-h-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {filteredMenuItems.map((item) => {
         const Icon = item.icon;
         const itemPath = item.path === '/dashboard' ? getDashboardPath() : item.path;
@@ -147,13 +147,13 @@ export function Sidebar() {
 
   return (
     <>
-      {/* ── DESKTOP: permanent sidebar, always visible ── */}
-      <aside className="hidden lg:flex h-screen w-64 flex-shrink-0 sticky top-0">
+      {/* ── DESKTOP: fixed sidebar, always full height ── */}
+      {/* fixed + inset-y-0 means it always spans the full viewport height regardless of zoom */}
+      <div className="hidden lg:block fixed left-0 top-0 bottom-0 z-20 w-64">
         <SidebarContent {...sharedProps} isMobile={false} />
-      </aside>
+      </div>
 
       {/* ── MOBILE: overlay drawer ── */}
-      {/* Backdrop */}
       <div
         className={`lg:hidden fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
@@ -161,9 +161,8 @@ export function Sidebar() {
         onClick={closeSidebar}
         aria-hidden="true"
       />
-      {/* Drawer */}
       <div
-        className={`lg:hidden fixed left-0 top-0 h-full z-50 transition-transform duration-300 ${
+        className={`lg:hidden fixed left-0 top-0 bottom-0 z-50 transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
