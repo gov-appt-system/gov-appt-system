@@ -1,24 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useForm } from 'react-hook-form';
-import { ChevronRight, ChevronLeft, FileText, Shield, Heart, AlertTriangle, Upload, Clipboard } from 'lucide-react';
+import {
+  ChevronRight, ChevronLeft, FileText, Shield, Heart,
+  AlertTriangle, Upload, Clipboard, ChevronDown,
+} from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Textarea } from '../components/ui/textarea';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../components/ui/alert-dialog';
-import { appointmentAPI, serviceAPI, Service } from '../services/api';
+import { appointmentAPI } from '../services/api';
 import { TIME_SLOTS } from '../data/mockData';
 import { toast } from 'sonner';
 
@@ -28,8 +20,7 @@ interface AppointmentDetailsForm {
   fullName: string;
   email: string;
   phone: string;
-  address?: string;
-  notes?: string;
+  address: string;
 }
 
 const SERVICE_CATEGORIES = [
@@ -42,14 +33,14 @@ const SERVICE_CATEGORIES = [
       'Valid Government-issued ID',
       'Proof of Address',
       'Birth Certificate (for civil registry documents)',
-      'Previous version of document (if applicable)'
+      'Previous version of document (if applicable)',
     ],
     services: [
       'Certificate of Residency',
       'Business Permit Request',
       'Community Tax Certificate (Cedula)',
-      'Barangay Clearance for Business'
-    ]
+      'Barangay Clearance for Business',
+    ],
   },
   {
     id: 'public-safety',
@@ -60,15 +51,15 @@ const SERVICE_CATEGORIES = [
       'Valid Government-issued ID',
       'Barangay Clearance',
       'Community Tax Certificate (Cedula)',
-      'Passport-sized photo (2x2)'
+      'Passport-sized photo (2x2)',
     ],
     services: [
       'Police Clearance',
       'NBI Clearance',
       'Barangay Clearance',
       'Fire Safety Inspection Certificate',
-      'Certificate of No Criminal Record'
-    ]
+      'Certificate of No Criminal Record',
+    ],
   },
   {
     id: 'health-social',
@@ -79,15 +70,15 @@ const SERVICE_CATEGORIES = [
       'Valid Government-issued ID',
       'PhilHealth ID or MDR',
       'Medical Certificate (if applicable)',
-      'Proof of Income or Financial Statement'
+      'Proof of Income or Financial Statement',
     ],
     services: [
       'Medical Certificate',
       'PWD ID / Certification',
       'Senior Citizen ID',
       'PhilHealth Member Data Record (MDR)',
-      'Indigency Certificate'
-    ]
+      'Indigency Certificate',
+    ],
   },
   {
     id: 'civil-registry',
@@ -98,15 +89,15 @@ const SERVICE_CATEGORIES = [
       'Valid Government-issued ID',
       'Original Birth/Marriage/Death Record',
       'Proof of relationship to the registrant',
-      'Payment receipt'
+      'Payment receipt',
     ],
     services: [
       'Birth Certificate',
       'Marriage Certificate',
       'Death Certificate',
       'Certificate of No Marriage (CENOMAR)',
-      'Advisory on Marriages'
-    ]
+      'Advisory on Marriages',
+    ],
   },
   {
     id: 'community',
@@ -117,15 +108,15 @@ const SERVICE_CATEGORIES = [
       'Valid Government-issued ID',
       'Barangay Certificate of Residency',
       'Proof of Calamity/Disaster Impact (if applicable)',
-      'Family Composition Form'
+      'Family Composition Form',
     ],
     services: [
       'Calamity Victim Certification',
       'Disaster Assistance Certificate',
       'Damage Assessment Report',
       'Relief Assistance Claim Form',
-      'Evacuation Center Certification'
-    ]
+      'Evacuation Center Certification',
+    ],
   },
 ];
 
@@ -136,43 +127,26 @@ export function BookAppointmentPage() {
   const [selectedService, setSelectedService] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
-  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [formData, setFormData] = useState<AppointmentDetailsForm | null>(null);
-  
+
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<AppointmentDetailsForm>();
 
-  // Load services on mount
-  useEffect(() => {
-    const loadServices = async () => {
-      try {
-        const data = await serviceAPI.getAll();
-        setServices(data);
-      } catch (error) {
-        toast.error('Failed to load services');
-      }
-    };
-    loadServices();
-  }, []);
-
-  // Load booked time slots when date is selected
+  // Load booked time slots when date + service are selected
   useEffect(() => {
     if (selectedDate && selectedService) {
       const loadBookedSlots = async () => {
         try {
-          // Fetch appointments for the selected date and service
           const appointments = await appointmentAPI.getAll();
           const bookedTimes = appointments
-            .filter((apt) => apt.date === selectedDate && apt.serviceId === selectedService)
-            .map((apt) => apt.time);
+            .filter(apt => apt.date === selectedDate && apt.serviceId === selectedService)
+            .map(apt => apt.time);
           setBookedSlots(bookedTimes);
-        } catch (error) {
+        } catch {
           console.error('Failed to load booked slots');
         }
       };
@@ -182,9 +156,9 @@ export function BookAppointmentPage() {
 
   const steps: { key: Step; label: string }[] = [
     { key: 'category', label: 'Category' },
-    { key: 'service', label: 'Service' },
+    { key: 'service',  label: 'Service' },
     { key: 'datetime', label: 'Date & Time' },
-    { key: 'details', label: 'Details' }
+    { key: 'details',  label: 'Details' },
   ];
 
   const currentStepIndex = steps.findIndex(s => s.key === currentStep);
@@ -201,6 +175,15 @@ export function BookAppointmentPage() {
     }
   };
 
+  const canProceed = () => {
+    switch (currentStep) {
+      case 'category': return selectedCategory !== '';
+      case 'service':  return selectedService !== '';
+      case 'datetime': return selectedDate !== '' && selectedTime !== '';
+      default:         return false;
+    }
+  };
+
   const onSubmit = async (data: AppointmentDetailsForm) => {
     setLoading(true);
     try {
@@ -212,393 +195,454 @@ export function BookAppointmentPage() {
         email: data.email,
         phone: data.phone,
         address: data.address,
-        notes: data.notes,
       });
-      
       toast.success('Appointment booked successfully!');
       navigate(`/confirmation/${appointment.trackingNumber}`, {
         state: {
           service: selectedService,
           date: selectedDate,
           time: selectedTime,
-          trackingNumber: appointment.trackingNumber
-        }
+          trackingNumber: appointment.trackingNumber,
+        },
       });
-    } catch (error) {
+    } catch {
       toast.error('Failed to book appointment. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const canProceed = () => {
-    switch (currentStep) {
-      case 'category':
-        return selectedCategory !== '';
-      case 'service':
-        return selectedService !== '';
-      case 'datetime':
-        return selectedDate !== '' && selectedTime !== '';
-      default:
-        return false;
-    }
-  };
-
-  // Generate calendar days for current month
+  // Calendar helpers
   const generateCalendarDays = () => {
-    const days = [];
     const today = new Date();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const days: (null | { day: number; date: string; disabled: boolean })[] = [];
 
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < firstDay; i++) {
-      days.push(null);
-    }
-
-    // Add days of the month
+    for (let i = 0; i < firstDay; i++) days.push(null);
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentYear, currentMonth, day);
-      const isPast = date < today;
+      const isPast = date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const isWeekend = date.getDay() === 0 || date.getDay() === 6;
       days.push({
         day,
         date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-        disabled: isPast || isWeekend
+        disabled: isPast || isWeekend,
       });
     }
-
     return days;
   };
 
-  const selectedCategoryData = SERVICE_CATEGORIES.find(cat => cat.id === selectedCategory);
+  const selectedCategoryData = SERVICE_CATEGORIES.find(c => c.id === selectedCategory);
+
+  // Breadcrumb shown on service + confirm steps
+  const Breadcrumb = () => (
+    <nav className="flex items-center gap-1.5 text-sm text-gray-500 mb-6">
+      <button
+        onClick={() => setCurrentStep('category')}
+        className="hover:text-[var(--gov-primary)] transition-colors"
+      >
+        Select Service Category
+      </button>
+      <ChevronRight size={14} className="text-gray-400" />
+      <span className="text-[var(--gov-secondary)] font-medium">
+        {selectedCategoryData?.name ?? ''}
+      </span>
+    </nav>
+  );
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-6 p-6">
+      <div className="max-w-4xl mx-auto space-y-6 p-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl text-[var(--gov-secondary)] mb-2">Book an Appointment</h1>
-          <p className="text-gray-600">Schedule your appointment with government services</p>
+          <h1 className="text-3xl text-[var(--gov-secondary)] mb-1">Book an Appointment</h1>
+          <p className="text-gray-500">Schedule your appointment with government services</p>
         </div>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center">
           {steps.map((step, index) => {
-            const isActive = currentStepIndex === index;
+            const isActive    = currentStepIndex === index;
             const isCompleted = currentStepIndex > index;
-
             return (
               <div key={step.key} className="flex items-center flex-1">
                 <div className="flex flex-col items-center flex-1">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 text-lg font-semibold ${
-                      isActive
-                        ? 'bg-[var(--gov-primary)] text-white'
-                        : isCompleted
+                    className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 text-sm font-semibold transition-colors ${
+                      isActive || isCompleted
                         ? 'bg-[var(--gov-primary)] text-white'
                         : 'bg-gray-200 text-gray-500'
                     }`}
                   >
                     {index + 1}
                   </div>
-                  <span className={`text-sm ${isActive ? 'text-[var(--gov-primary)] font-medium' : 'text-gray-600'}`}>
+                  <span className={`text-xs ${isActive ? 'text-[var(--gov-primary)] font-medium' : 'text-gray-500'}`}>
                     {step.label}
                   </span>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className={`h-1 flex-1 ${isCompleted ? 'bg-[var(--gov-primary)]' : 'bg-gray-200'}`} />
+                  <div className={`h-0.5 flex-1 mb-4 transition-colors ${isCompleted ? 'bg-[var(--gov-primary)]' : 'bg-gray-200'}`} />
                 )}
               </div>
             );
           })}
         </div>
 
-        {/* Step Content */}
-        <Card className="p-8">
-          {currentStep === 'category' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl text-[var(--gov-secondary)]">Select Service Category</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {SERVICE_CATEGORIES.map(category => {
-                  const Icon = category.icon;
-                  return (
-                    <div
-                      key={category.id}
-                      onClick={() => {
-                        setSelectedCategory(category.id);
-                      }}
-                      className={`p-6 border-2 rounded-lg cursor-pointer transition-all ${
-                        selectedCategory === category.id
-                          ? 'border-[var(--gov-primary)] bg-[var(--gov-accent)]'
-                          : 'border-gray-200 hover:border-[var(--gov-primary)] hover:bg-gray-50'
-                      }`}
-                    >
-                      <Icon size={40} className="text-[var(--gov-primary)] mb-4" />
-                      <h3 className="text-xl text-[var(--gov-secondary)] mb-2">{category.name}</h3>
-                      <p className="text-sm text-gray-600">{category.description}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {currentStep === 'service' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl text-[var(--gov-secondary)]">Select a Service</h2>
-                {selectedCategoryData && (
-                  <p className="text-gray-600 mt-2">{selectedCategoryData.description}</p>
-                )}
-              </div>
-              <div className="grid grid-cols-1 gap-4">
-                {selectedCategoryData?.services.map((serviceName, index) => (
-                  <div
-                    key={index}
-                    onClick={() => setSelectedService(serviceName)}
-                    className={`p-6 border-2 rounded-lg cursor-pointer transition-all ${
-                      selectedService === serviceName
-                        ? 'border-[var(--gov-primary)] bg-[var(--gov-accent)]'
-                        : 'border-gray-200 hover:border-[var(--gov-primary)] hover:bg-gray-50'
+        {/* ── STEP 1: Select Category ── */}
+        {currentStep === 'category' && (
+          <Card className="p-8">
+            <h2 className="text-xl font-semibold text-[var(--gov-secondary)] mb-6">
+              Select Service Category
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {SERVICE_CATEGORIES.map(category => {
+                const Icon = category.icon;
+                const isSelected = selectedCategory === category.id;
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`text-left p-5 rounded-xl border-2 transition-all focus:outline-none ${
+                      isSelected
+                        ? 'border-[var(--gov-primary)] bg-[var(--gov-primary)]/5'
+                        : 'border-gray-200 hover:border-[var(--gov-primary)]/50 hover:bg-gray-50'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg text-[var(--gov-secondary)] mb-1">{serviceName}</h3>
-                        <p className="text-sm text-gray-600">Government service request</p>
-                      </div>
-                      {selectedService === serviceName && (
-                        <div className="flex items-center gap-2 text-[var(--gov-primary)]">
-                          <span className="text-sm font-medium">Selected</span>
-                        </div>
-                      )}
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${
+                      isSelected ? 'bg-[var(--gov-primary)]/15' : 'bg-gray-100'
+                    }`}>
+                      <Icon size={22} className={isSelected ? 'text-[var(--gov-primary)]' : 'text-gray-500'} />
                     </div>
-                  </div>
-                ))}
-              </div>
+                    <h3 className={`font-semibold mb-1 ${isSelected ? 'text-[var(--gov-primary)]' : 'text-[var(--gov-secondary)]'}`}>
+                      {category.name}
+                    </h3>
+                    <p className="text-xs text-gray-500 leading-relaxed">{category.description}</p>
+                  </button>
+                );
+              })}
             </div>
-          )}
 
-          {currentStep === 'datetime' && (
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-2xl text-[var(--gov-secondary)] mb-6">Choose Date & Time</h2>
-                
-                {/* Date Selection */}
-                <div className="mb-8">
-                  <h3 className="text-lg text-[var(--gov-secondary)] mb-4">Select Date</h3>
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <div className="text-center mb-4">
-                      <h3 className="text-lg text-[var(--gov-secondary)]">March 2026</h3>
-                    </div>
-                    <div className="grid grid-cols-7 gap-2">
-                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                        <div key={day} className="text-center text-sm text-gray-600 py-2">{day}</div>
-                      ))}
-                      {generateCalendarDays().map((dayInfo, index) => {
-                        if (!dayInfo) {
-                          return <div key={`empty-${index}`} />;
-                        }
-                        const isSelected = selectedDate === dayInfo.date;
-                        return (
-                          <button
-                            key={dayInfo.date}
-                            disabled={dayInfo.disabled}
-                            onClick={() => setSelectedDate(dayInfo.date)}
-                            className={`py-3 rounded-lg text-sm transition-all ${
-                              dayInfo.disabled
-                                ? 'text-gray-300 cursor-not-allowed'
-                                : isSelected
-                                ? 'bg-[var(--gov-primary)] text-white'
-                                : 'hover:bg-[var(--gov-accent)]'
-                            }`}
-                          >
-                            {dayInfo.day}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-4 text-center">
-                      * Weekends are not available for appointments
+            <div className="flex justify-end mt-8">
+              <Button
+                onClick={handleNext}
+                disabled={!canProceed()}
+                className="bg-[var(--gov-primary)] hover:bg-[var(--gov-primary)]/90 min-w-[120px]"
+              >
+                Next <ChevronRight size={18} />
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* ── STEP 2: Select Service (expands inline to show required docs) ── */}
+        {currentStep === 'service' && (
+          <Card className="p-8">
+            <Breadcrumb />
+            <h2 className="text-xl font-semibold text-[var(--gov-secondary)] mb-6">
+              Select a Service
+            </h2>
+            <div className="space-y-3">
+              {selectedCategoryData?.services.map(serviceName => {
+                const isSelected = selectedService === serviceName;
+                return (
+                  <div
+                    key={serviceName}
+                    className={`rounded-xl border-2 overflow-hidden transition-all ${
+                      isSelected ? 'border-[var(--gov-primary)]' : 'border-gray-200 hover:border-[var(--gov-primary)]/50'
+                    }`}
+                  >
+                    {/* Card header row */}
+                    <button
+                      onClick={() => setSelectedService(serviceName)}
+                      className="w-full text-left flex items-center focus:outline-none"
+                    >
+                      {/* Left accent bar */}
+                      <div className={`w-1 self-stretch flex-shrink-0 ${
+                        isSelected ? 'bg-[var(--gov-primary)]' : 'bg-gray-200'
+                      }`} />
+                      <div className="flex-1 px-5 py-4">
+                        <p className={`font-medium ${isSelected ? 'text-[var(--gov-primary)]' : 'text-[var(--gov-secondary)]'}`}>
+                          {serviceName}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">Government service request</p>
+                      </div>
+                      <div className="pr-4">
+                        {isSelected ? (
+                          <div className="w-5 h-5 rounded-full bg-[var(--gov-primary)] flex items-center justify-center">
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        ) : (
+                          <ChevronDown size={16} className="text-gray-400" />
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Inline expanded: required documents */}
+                    {isSelected && selectedCategoryData && (
+                      <div className="mx-4 mb-4 rounded-lg bg-yellow-50 border border-yellow-200 p-4">
+                        <p className="text-xs font-semibold text-yellow-800 mb-2 uppercase tracking-wide">
+                          Required documents:
+                        </p>
+                        <ul className="space-y-1">
+                          {selectedCategoryData.requiredDocuments.map((doc, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-yellow-900">
+                              <span className="mt-1 w-1.5 h-1.5 rounded-full bg-yellow-600 flex-shrink-0" />
+                              {doc}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-between mt-8">
+              <Button variant="outline" onClick={handleBack} className="min-w-[100px]">
+                <ChevronLeft size={18} /> Back
+              </Button>
+              <Button
+                onClick={handleNext}
+                disabled={!canProceed()}
+                className="bg-[var(--gov-primary)] hover:bg-[var(--gov-primary)]/90 min-w-[120px]"
+              >
+                Next <ChevronRight size={18} />
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* ── STEP 4: Date & Time ── */}
+        {currentStep === 'datetime' && (
+          <Card className="p-8 space-y-8">
+            <div>
+              <h2 className="text-xl font-semibold text-[var(--gov-secondary)] mb-6">Choose Date & Time</h2>
+
+              {/* Date picker */}
+              <div className="mb-8">
+                <h3 className="text-base font-medium text-[var(--gov-secondary)] mb-4">Select Date</h3>
+                <div className="bg-gray-50 rounded-xl p-6">
+                  <div className="text-center mb-4">
+                    <p className="text-base font-medium text-[var(--gov-secondary)]">
+                      {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
                     </p>
                   </div>
-                </div>
-
-                {/* Time Selection */}
-                {selectedDate && (
-                  <div>
-                    <h3 className="text-lg text-[var(--gov-secondary)] mb-4">Select Time Slot</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {TIME_SLOTS.map(slot => {
-                        const isBooked = bookedSlots.includes(slot.time);
-                        const isAvailable = slot.available && !isBooked;
-                        
-                        return (
-                          <button
-                            key={slot.time}
-                            disabled={!isAvailable}
-                            onClick={() => setSelectedTime(slot.time)}
-                            className={`p-4 rounded-lg border-2 transition-all text-center ${
-                              !isAvailable
-                                ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
-                                : selectedTime === slot.time
-                                ? 'border-[var(--gov-primary)] bg-[var(--gov-accent)] text-[var(--gov-secondary)]'
-                                : 'border-gray-200 hover:border-[var(--gov-primary)]'
-                            }`}
-                          >
-                            <p className="text-center font-medium">{slot.time}</p>
-                            {isBooked && <p className="text-xs text-center mt-1">Booked</p>}
-                          </button>
-                        );
-                      })}
-                    </div>
+                  <div className="grid grid-cols-7 gap-1 text-center">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+                      <div key={d} className="text-xs text-gray-500 py-2">{d}</div>
+                    ))}
+                    {generateCalendarDays().map((dayInfo, index) => {
+                      if (!dayInfo) return <div key={`empty-${index}`} />;
+                      const isSelected = selectedDate === dayInfo.date;
+                      return (
+                        <button
+                          key={dayInfo.date}
+                          disabled={dayInfo.disabled}
+                          onClick={() => setSelectedDate(dayInfo.date)}
+                          className={`py-2.5 rounded-lg text-sm transition-all ${
+                            dayInfo.disabled
+                              ? 'text-gray-300 cursor-not-allowed'
+                              : isSelected
+                              ? 'bg-[var(--gov-primary)] text-white font-semibold'
+                              : 'hover:bg-[var(--gov-primary)]/10 text-gray-700'
+                          }`}
+                        >
+                          {dayInfo.day}
+                        </button>
+                      );
+                    })}
                   </div>
-                )}
+                  <p className="text-xs text-gray-400 mt-4 text-center">
+                    * Weekends are not available for appointments
+                  </p>
+                </div>
               </div>
+
+              {/* Time slots */}
+              {selectedDate && (
+                <div>
+                  <h3 className="text-base font-medium text-[var(--gov-secondary)] mb-4">Select Time Slot</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {TIME_SLOTS.map(slot => {
+                      const isBooked = bookedSlots.includes(slot.time);
+                      const isAvailable = slot.available && !isBooked;
+                      return (
+                        <button
+                          key={slot.time}
+                          disabled={!isAvailable}
+                          onClick={() => setSelectedTime(slot.time)}
+                          className={`p-3 rounded-lg border-2 text-sm transition-all ${
+                            !isAvailable
+                              ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                              : selectedTime === slot.time
+                              ? 'border-[var(--gov-primary)] bg-[var(--gov-primary)]/10 text-[var(--gov-secondary)] font-semibold'
+                              : 'border-gray-200 hover:border-[var(--gov-primary)]/50 text-gray-700'
+                          }`}
+                        >
+                          {slot.time}
+                          {isBooked && <span className="block text-xs text-gray-400 mt-0.5">Booked</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
 
-          {currentStep === 'details' && (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <h2 className="text-2xl text-[var(--gov-secondary)]">Your Details</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name *</Label>
-                  <Input
-                    id="fullName"
-                    placeholder="Juan Dela Cruz"
-                    {...register('fullName', { required: 'Full name is required' })}
-                  />
-                  {errors.fullName && (
-                    <p className="text-sm text-red-600">{errors.fullName.message}</p>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="juan@example.com"
-                    {...register('email', {
-                      required: 'Email is required',
-                      pattern: {
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: 'Invalid email address',
-                      },
-                    })}
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-red-600">{errors.email.message}</p>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number *</Label>
-                  <Input
-                    id="phone"
-                    placeholder="09123456789"
-                    {...register('phone', {
-                      required: 'Phone number is required',
-                      pattern: {
-                        value: /^[0-9]{10,11}$/,
-                        message: 'Invalid phone number',
-                      },
-                    })}
-                  />
-                  {errors.phone && (
-                    <p className="text-sm text-red-600">{errors.phone.message}</p>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input
-                    id="address"
-                    placeholder="City, Province"
-                    {...register('address')}
-                  />
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={handleBack} className="min-w-[100px]">
+                <ChevronLeft size={18} /> Back
+              </Button>
+              <Button
+                onClick={handleNext}
+                disabled={!canProceed()}
+                className="bg-[var(--gov-primary)] hover:bg-[var(--gov-primary)]/90 min-w-[120px]"
+              >
+                Next <ChevronRight size={18} />
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* ── STEP 4: Details ── */}
+        {currentStep === 'details' && (
+          <Card className="p-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+
+              {/* Your Information */}
+              <div>
+                <h2 className="text-xl font-semibold text-[var(--gov-secondary)] mb-5">Your Information</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="fullName">Full Name *</Label>
+                    <Input
+                      id="fullName"
+                      placeholder="e.g. Juan C. Dela Cruz"
+                      {...register('fullName', { required: 'Full name is required' })}
+                    />
+                    {errors.fullName && <p className="text-xs text-red-600">{errors.fullName.message}</p>}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email">Email Address *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="e.g. juan.delacruz@gmail.com"
+                      {...register('email', {
+                        required: 'Email is required',
+                        pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: 'Invalid email address' },
+                      })}
+                    />
+                    {errors.email && <p className="text-xs text-red-600">{errors.email.message}</p>}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Input
+                      id="phone"
+                      placeholder="e.g. 09123456789"
+                      {...register('phone', {
+                        required: 'Phone number is required',
+                        pattern: { value: /^[0-9]{10,11}$/, message: 'Invalid phone number' },
+                      })}
+                    />
+                    {errors.phone && <p className="text-xs text-red-600">{errors.phone.message}</p>}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="address">Address *</Label>
+                    <Input
+                      id="address"
+                      placeholder="City, Province"
+                      {...register('address', { required: 'Address is required' })}
+                    />
+                    {errors.address && <p className="text-xs text-red-600">{errors.address.message}</p>}
+                  </div>
                 </div>
               </div>
-              
-              {/* Category-specific Required Documents */}
+
+              {/* Required Documents */}
               {selectedCategoryData && (
-                <div className="space-y-3">
-                  <Label>Required Documents for {selectedCategoryData.name}</Label>
-                  <div className="bg-[var(--gov-highlight)] p-4 rounded-lg">
-                    <p className="text-sm text-[var(--gov-secondary)] mb-3 font-medium">Please prepare the following documents:</p>
-                    <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-                      {selectedCategoryData.requiredDocuments.map((doc, index) => (
-                        <li key={index}>{doc}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <Upload className="mx-auto mb-2 text-gray-400" size={32} />
-                    <p className="text-sm text-gray-600 mb-1">Click to upload or drag and drop</p>
-                    <p className="text-xs text-gray-500">PDF, JPG, PNG (max 5MB)</p>
+                <div>
+                  <h2 className="text-xl font-semibold text-[var(--gov-secondary)] mb-5">
+                    Required documents for {selectedService}
+                  </h2>
+                  <div className="rounded-xl border border-gray-200 overflow-hidden">
+                    {selectedCategoryData.requiredDocuments.map((doc, i) => (
+                      <div
+                        key={i}
+                        className={`flex items-center justify-between px-5 py-3.5 ${
+                          i < selectedCategoryData.requiredDocuments.length - 1
+                            ? 'border-b border-gray-100'
+                            : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 text-sm text-gray-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--gov-primary)] flex-shrink-0" />
+                          {doc}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-1.5 text-xs border-gray-300 text-gray-600 hover:border-[var(--gov-primary)] hover:text-[var(--gov-primary)]"
+                        >
+                          <Upload size={13} />
+                          Upload
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="notes">Additional Notes</Label>
-                <Textarea
-                  id="notes"
-                  rows={4}
-                  placeholder="Any additional information..."
-                  {...register('notes')}
-                />
-              </div>
-
-              <div className="bg-[var(--gov-accent)] p-6 rounded-lg border border-[var(--gov-primary)]">
-                <h3 className="text-lg text-[var(--gov-secondary)] mb-3 font-semibold">Appointment Summary</h3>
-                <div className="space-y-2 text-sm text-gray-700">
-                  <p><strong>Category:</strong> {selectedCategoryData?.name}</p>
-                  <p><strong>Service:</strong> {selectedService}</p>
-                  <p><strong>Date:</strong> {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                  <p><strong>Time:</strong> {selectedTime}</p>
+              {/* Appointment Summary */}
+              <div className="bg-[var(--gov-primary)]/10 border border-[var(--gov-primary)]/30 rounded-xl p-4">
+                <p className="text-sm font-bold text-[var(--gov-secondary)] mb-3">Appointment Summary</p>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
+                  <div>
+                    <span className="text-gray-500">Category</span>
+                    <p className="font-medium text-[var(--gov-secondary)]">{selectedCategoryData?.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Service</span>
+                    <p className="font-medium text-[var(--gov-secondary)]">{selectedService}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Date</span>
+                    <p className="font-medium text-[var(--gov-secondary)]">
+                      {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Time</span>
+                    <p className="font-medium text-[var(--gov-secondary)]">{selectedTime}</p>
+                  </div>
                 </div>
               </div>
-            </form>
-          )}
-        </Card>
 
-        {/* Navigation Buttons */}
-        <div className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            disabled={currentStepIndex === 0}
-            className="min-w-[120px]"
-          >
-            <ChevronLeft size={20} />
-            Back
-          </Button>
-          
-          {currentStep === 'details' ? (
-            <Button
-              onClick={handleSubmit(onSubmit)}
-              disabled={loading}
-              className="bg-[var(--gov-primary)] hover:bg-[var(--gov-primary)]/90 min-w-[180px]"
-            >
-              {loading ? 'Submitting...' : 'Submit Appointment'}
-            </Button>
-          ) : (
-            <Button
-              onClick={handleNext}
-              disabled={!canProceed()}
-              className="bg-[var(--gov-primary)] hover:bg-[var(--gov-primary)]/90 min-w-[120px]"
-            >
-              Next
-              <ChevronRight size={20} />
-            </Button>
-          )}
-        </div>
+              <div className="flex justify-between pt-1">
+                <Button type="button" variant="outline" onClick={handleBack} className="min-w-[100px]">
+                  <ChevronLeft size={18} /> Back
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-[var(--gov-primary)] hover:bg-[var(--gov-primary)]/90 min-w-[180px]"
+                >
+                  {loading ? 'Submitting...' : 'Submit Appointment'}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );
