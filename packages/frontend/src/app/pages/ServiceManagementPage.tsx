@@ -307,7 +307,7 @@ export function ServiceManagementPage() {
         </Dialog>
 
         {/* Delete Service Confirmation Dialog */}
-        <AlertDialog open={deleteServiceId !== null} onOpenChange={setDeleteServiceId}>
+        <AlertDialog open={deleteServiceId !== null} onOpenChange={(open) => { if (!open) setDeleteServiceId(null); }}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

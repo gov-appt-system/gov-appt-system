@@ -2,6 +2,8 @@
 .env
 .env.local
 .env.*.local
+text.ttxt
+
 
 # Dependencies
 node_modules/
