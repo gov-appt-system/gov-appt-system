@@ -12,7 +12,8 @@ import {
   Briefcase,
   UserCog,
   UserCheck,
-  Shield
+  Shield,
+  ClipboardList
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSidebar } from '../context/SidebarContext';
@@ -32,6 +33,7 @@ const menuItems: MenuItem[] = [
   { icon: Calendar,       label: 'Calendar',           path: '/calendar',     roles: ['client', 'staff', 'manager', 'admin'] },
   { icon: FileText,       label: 'Process Requests',   path: '/process',      roles: ['staff', 'manager', 'admin'] },
   { icon: Briefcase,      label: 'Service Management', path: '/services',     roles: ['manager', 'admin'] },
+  { icon: ClipboardList,  label: 'Staff Assignments',  path: '/staff-assignments', roles: ['manager'] },
   { icon: Users,          label: 'Staff Management',   path: '/staff',        roles: ['admin'] },
   { icon: UserCog,        label: 'Account Management', path: '/admin/accounts', roles: ['admin'] },
   { icon: UserCheck,      label: 'Client Management',  path: '/admin/clients',  roles: ['admin'] },

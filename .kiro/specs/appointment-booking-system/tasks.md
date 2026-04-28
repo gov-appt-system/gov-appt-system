@@ -123,7 +123,7 @@ The frontend currently uses **mock data** (localStorage-based) and does not call
     - _Requirements: 3.7, 6.8, 7.6, 9.2, 9.3, 9.4_
   - [x] 7.2 Implement `getAuditLogs(filters)` and `exportAuditLogs(startDate, endDate)` — export returns CSV or JSON string
     - _Requirements: 9.5_
-  - [ ]* 7.3 Write property test for AuditLogger
+  - [x] 7.3 Write property test for AuditLogger
     - **Property 10: Audit log immutability** — for any logged action, querying `getAuditLogs` always returns a record matching the logged action; no update or delete path exists
     - **Validates: Requirements 9.2, 9.3**
 
@@ -187,7 +187,7 @@ The frontend currently uses **mock data** (localStorage-based) and does not call
   - [x] 14.6 Implement `GET /api/admin/audit-logs` and `GET /api/admin/audit-logs/export` (Admin only)
     - _Requirements: 9.5_
 
-- [ ] 15. Checkpoint — full API
+- [x] 15. Checkpoint — full API
   - Run all backend tests: `pnpm --filter backend test`
   - Manually verify the seed data flows through auth → booking → status update using a REST client (curl or Postman)
   - Ensure all tests pass; ask the user if questions arise before continuing.
@@ -228,7 +228,7 @@ The frontend currently uses **mock data** (localStorage-based) and does not call
     - ⚠️ Deactivate account button is missing. Uses mock data.
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 19. Frontend: staff and manager pages
+- [x] 19. Frontend: staff and manager pages
   - [x] 19.1 Build `StaffDashboardPage` — appointment queue for assigned services (`GET /api/appointments`), filterable by status
     - ⚠️ Uses `INITIAL_APPOINTMENTS` from mock data. Imports custom `Card`/`Button`/`StatCard` (not shadcn).
     - _Requirements: 3.1_

@@ -137,3 +137,25 @@
   - **14.6** `GET /api/admin/audit-logs` — Paginated audit log viewer with optional filters (userId, action, resource, startDate, endDate). `GET /api/admin/audit-logs/export` — Exports audit logs as CSV for a date range.
   - Registered the admin router at `/api/admin` in the Express app entry point.
   - Build passes (`tsc`), all 38 existing tests pass.
+
+### Task 7.3: Write property test for AuditLogger
+- **Files created:** `packages/backend/src/services/audit.test.ts`
+- **Summary:** Added property-based tests (fast-check, 100 iterations each) validating Property 10: Audit log immutability. Six tests cover: round-trip verification for `logUserAction`, `logSystemEvent`, and `logError` (logged entries are always retrievable via `getAuditLogs`); API surface check confirming no update/delete methods exist; insert failure resilience (errors are swallowed without throwing); and filter application correctness. All 44 backend tests pass (6 test files).
+
+### Task 15: Checkpoint — Full API
+- **Files reviewed:** All route files (`auth.ts`, `profile.ts`, `services.ts`, `assignments.ts`, `appointments.ts`, `admin.ts`), `middleware/auth.ts`, `index.ts`
+- **Summary:** Full backend checkpoint completed. All 44 tests pass across 6 test files (auth, calendar, rbac, audit, tracking, password). TypeScript build compiles cleanly with zero errors. Verified all API endpoints from tasks 10–14 are implemented and wired: 5 auth routes, 4 profile routes, 5 service routes, 3 assignment routes, 6 appointment routes, and 8 admin routes. JWT middleware and role-guard middleware are in place. All routes enforce RBAC per the permission matrix.
+
+### Task 19: Frontend — Staff and Manager Pages
+
+- **Files modified:** `packages/frontend/src/app/services/api.ts`, `packages/frontend/src/app/pages/StaffDashboard.tsx`, `packages/frontend/src/app/pages/ProcessRequestsPage.tsx`, `packages/frontend/src/app/pages/ServiceManagementPage.tsx`, `packages/frontend/src/app/routes.tsx`, `packages/frontend/src/app/components/Sidebar.tsx`
+- **Files created:** `packages/frontend/src/app/pages/StaffAssignmentPage.tsx`
+- **Summary:** Rewrote all four staff/manager pages to use real backend API calls and shadcn/ui components, replacing mock data and custom Card/Button components.
+  - **19.1 StaffDashboard**: Replaced `INITIAL_APPOINTMENTS` mock with `realAppointmentAPI.getAll()` + `realServiceAPI.getAll()`. Migrated to shadcn Card/Table/Button. Added service name lookup map, loading/error states.
+  - **19.2 ProcessRequestsPage**: Replaced mock data with real API calls. Added status filter tabs (All/Pending/Confirmed/Completed/Cancelled/No Show). Remarks modal now saves via `PUT /api/appointments/:id`. Backend service hours validation errors displayed to user. Proper status transitions (pending→confirmed, confirmed→completed/cancelled/no_show).
+  - **19.3 ServiceManagementPage**: Replaced mock `SERVICES` with `realServiceAPI`. Removed `price` field. Added duration, capacity, startTime/endTime, daysOfWeek (checkboxes), and requiredDocuments (add/remove) fields matching backend schema. Edit calls `PUT /api/services/:id`. Archive calls `DELETE /api/services/:id` (soft-archive).
+  - **19.4 StaffAssignmentPage (NEW)**: Manager-only page for service-scoped staff assignments. Service dropdown, assigned staff table with profile info, assign via UUID input, remove with confirmation dialog. Uses `GET/POST/DELETE /api/services/:id/assignments`.
+  - **API layer**: Added `realAppointmentAPI`, `realServiceAPI`, `assignmentAPI` with typed interfaces (`BackendAppointment`, `BackendService`, `BackendAssignment`). Kept legacy mock APIs for unmigrated pages.
+  - **Routing**: Added `/staff-assignments` route under manager-only RoleGuard.
+  - **Sidebar**: Added "Staff Assignments" menu item with `ClipboardList` icon for managers.
+  - **Build**: Frontend builds cleanly (`tsc && vite build`).

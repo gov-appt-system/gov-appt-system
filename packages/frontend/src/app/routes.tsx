@@ -16,6 +16,7 @@ import { NotificationsPage } from './pages/NotificationsPage';
 import { ProcessRequestsPage } from './pages/ProcessRequestsPage';
 import { ServiceManagementPage } from './pages/ServiceManagementPage';
 import { StaffManagementPage } from './pages/StaffManagementPage';
+import { StaffAssignmentPage } from './pages/StaffAssignmentPage';
 import { AdminAccountsPage } from './pages/AdminAccountsPage';
 import { AdminClientsPage } from './pages/AdminClientsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
@@ -116,6 +117,17 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
               {
                 path: 'services',
                 element: <ServiceManagementPage />,
+              },
+            ],
+          },
+
+          /* ── Manager-only routes ── */
+          {
+            element: <RoleGuard allowedRoles={['manager']} />,
+            children: [
+              {
+                path: 'staff-assignments',
+                element: <StaffAssignmentPage />,
               },
             ],
           },
