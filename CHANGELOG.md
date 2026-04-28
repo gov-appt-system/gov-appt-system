@@ -74,3 +74,27 @@
 - **Files created:** `packages/frontend/src/app/pages/AdminClientsPage.tsx`
 - **Files modified:** `packages/frontend/src/app/routes.tsx`, `packages/frontend/src/app/components/Sidebar.tsx`
 - **Summary:** Built the AdminClientsPage for admin users to view and manage client accounts. Features include: a table listing all clients with Name, Email, Phone, Government ID, Date of Birth, and Status columns; stat cards for total/active/archived counts; search by name, email, or government ID; status filter; a View Client Details dialog (read-only); an Edit Client dialog for updating name, phone, and address; and an Archive action with confirmation dialog that soft-deactivates accounts. Added route at `/admin/clients` under admin-only RoleGuard and "Client Management" sidebar item with `UserCheck` icon.
+
+### Task 20.3: Build AuditLogsPage — paginated audit log viewer with filters, export button
+- **Files created:** `packages/frontend/src/app/pages/AuditLogsPage.tsx`
+- **Files modified:** `packages/frontend/src/app/routes.tsx`, `packages/frontend/src/app/components/Sidebar.tsx`
+- **Summary:** Built the AuditLogsPage for admin users to view and export system activity logs. Features include: a paginated table (10 entries/page) with Timestamp, User, Action, Resource, Details, and IP Address columns sorted newest-first; 25 mock audit log entries spanning 7 days; filters for user search, action type, resource type, and date range with a Clear Filters button; stat cards for total entries, today's events, and unique users; Export CSV and Export JSON buttons that generate downloadable files from filtered data. Added route at `/admin/audit-logs` under admin-only RoleGuard and "Audit Logs" sidebar item with `Shield` icon.
+
+### Task 20: Frontend — Admin Pages (Parent)
+- **Files created:** `AdminAccountsPage.tsx`, `AdminClientsPage.tsx`, `AuditLogsPage.tsx`
+- **Files modified:** `routes.tsx`, `Sidebar.tsx`
+- **Summary:** Completed all three admin pages: Account Management (staff/manager CRUD with archive), Client Management (view/edit/archive clients), and Audit Logs (paginated viewer with filters and CSV/JSON export). All pages are admin-only, registered in the router and sidebar, and follow consistent patterns using DashboardLayout, shadcn/ui, and mock data.
+
+### Task 12.1: POST /api/services/:id/assignments (Manager only)
+- **Files created:** `packages/backend/src/routes/assignments.ts`
+- **Files modified:** `packages/backend/src/index.ts`
+- **Summary:** Implemented `POST /api/services/:id/assignments` endpoint for managers to assign staff to services. Validates that the service exists and is active, the target user exists with `role = 'staff'` and is active, and no duplicate active assignment exists (returns 409 if already assigned). Creates a `service_assignments` row and logs the action via `AuditLogger`. The route file uses `mergeParams: true` to access the `:id` param from the parent services router.
+
+### Task 12.2: GET /api/services/:id/assignments and DELETE /api/services/:id/assignments/:assignmentId (Manager only)
+- **Files modified:** `packages/backend/src/routes/assignments.ts`
+- **Summary:** Implemented `GET /api/services/:id/assignments` to list all active assignments for a service with joined staff profile info (name, employee ID, department, email). Implemented `DELETE /api/services/:id/assignments/:assignmentId` for soft-archiving assignments (sets `is_active = false`, `archived_at`, and `archived_by`). Both endpoints are Manager-only and audit-logged.
+
+### Task 12: Backend REST API — Staff Assignment Routes (Parent)
+- **Files created:** `packages/backend/src/routes/assignments.ts`
+- **Files modified:** `packages/backend/src/index.ts`
+- **Summary:** Completed all staff assignment CRUD routes. Created a dedicated assignments router mounted at `/api/services/:id/assignments` with three endpoints: POST (assign staff), GET (list assignments with staff profile details), and DELETE (soft-archive assignment). All routes enforce Manager-only access via `requireRole(UserRole.MANAGER)` and log actions via `AuditLogger`. TypeScript build passes and all 38 existing tests pass.

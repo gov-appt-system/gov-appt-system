@@ -3,6 +3,7 @@ import cors from 'cors';
 import authRouter from './routes/auth';
 import profileRouter from './routes/profile';
 import servicesRouter from './routes/services';
+import assignmentsRouter from './routes/assignments';
 import { logger } from './config/logger';
 
 const app: Express = express();
@@ -25,6 +26,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/profile', profileRouter);
 app.use('/api/services', servicesRouter);
+app.use('/api/services/:id/assignments', assignmentsRouter);
 
 // Global error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {

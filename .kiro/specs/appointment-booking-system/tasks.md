@@ -155,10 +155,10 @@ The frontend currently uses **mock data** (localStorage-based) and does not call
     - Enforce uniqueness check on service name; call `AuditLogger` on every mutation
     - _Requirements: 7.1, 7.3, 7.4, 7.5, 7.6_
 
-- [ ] 12. Backend: REST API — staff assignment routes
-  - [ ] 12.1 Implement `POST /api/services/:id/assignments` (Manager only) — validates that the target user has `role = 'staff'`, creates `service_assignments` row, calls `AuditLogger`
+- [x] 12. Backend: REST API — staff assignment routes
+  - [x] 12.1 Implement `POST /api/services/:id/assignments` (Manager only) — validates that the target user has `role = 'staff'`, creates `service_assignments` row, calls `AuditLogger`
     - _Requirements: 6.5, 6.8_
-  - [ ] 12.2 Implement `GET /api/services/:id/assignments` (Manager only) and `DELETE /api/services/:id/assignments/:assignmentId` (soft-archive, Manager only)
+  - [x] 12.2 Implement `GET /api/services/:id/assignments` (Manager only) and `DELETE /api/services/:id/assignments/:assignmentId` (soft-archive, Manager only)
     - _Requirements: 6.6, 6.7, 6.8_
 
 - [ ] 13. Backend: REST API — appointment routes
@@ -228,7 +228,7 @@ The frontend currently uses **mock data** (localStorage-based) and does not call
     - ⚠️ Deactivate account button is missing. Uses mock data.
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [-] 19. Frontend: staff and manager pages
+- [ ] 19. Frontend: staff and manager pages
   - [x] 19.1 Build `StaffDashboardPage` — appointment queue for assigned services (`GET /api/appointments`), filterable by status
     - ⚠️ Uses `INITIAL_APPOINTMENTS` from mock data. Imports custom `Card`/`Button`/`StatCard` (not shadcn).
     - _Requirements: 3.1_
