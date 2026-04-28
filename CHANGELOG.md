@@ -124,3 +124,16 @@
 - **Files created:** `packages/backend/src/routes/appointments.ts`
 - **Files modified:** `packages/backend/src/index.ts`
 - **Summary:** Completed all five appointment route subtasks. The appointments router provides: `POST /` (client booking with slot validation, tracking number, email confirmation), `GET /` (role-based listing with filters), `GET /track/:trackingNumber` (client tracking lookup), `GET /:id` (single appointment with access control), `PUT /:id` (staff/manager status updates with transition validation and service hours check), and `DELETE /:id` (client soft-cancel of pending appointments). All routes enforce RBAC, audit-log mutations, and follow the soft-delete pattern. Backend builds cleanly and all 38 tests pass.
+
+### Task 14: Backend REST API — Admin Account Management Routes
+- **Files created:** `packages/backend/src/routes/admin.ts`
+- **Files modified:** `packages/backend/src/index.ts`
+- **Summary:** Implemented all six admin-only API endpoints behind `authenticateToken` + `requireRole(ADMIN)` middleware:
+  - **14.1** `POST /api/admin/accounts` — Creates staff or manager accounts with password complexity validation, duplicate email/employeeId checks, inserts into `users` + `staff_profiles`, and audit logs the action.
+  - **14.2** `GET /api/admin/accounts` — Lists all staff and manager accounts using the `manager_staff_overview` database view, returning camelCase-mapped results with assigned services.
+  - **14.3** `PUT /api/admin/accounts/:id` — Updates staff/manager account info (email, role, name, employeeId, department) with duplicate checks and audit logging.
+  - **14.4** `DELETE /api/admin/accounts/:id` — Soft-archives staff/manager accounts (sets `is_active=false`, `archived_at=now()`), also archives their active service assignments, with audit logging.
+  - **14.5** `GET /api/admin/clients` — Lists all client accounts with profile info. `PUT /api/admin/clients/:id` — Updates client account and profile fields with duplicate email check and audit logging.
+  - **14.6** `GET /api/admin/audit-logs` — Paginated audit log viewer with optional filters (userId, action, resource, startDate, endDate). `GET /api/admin/audit-logs/export` — Exports audit logs as CSV for a date range.
+  - Registered the admin router at `/api/admin` in the Express app entry point.
+  - Build passes (`tsc`), all 38 existing tests pass.

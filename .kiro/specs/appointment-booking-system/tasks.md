@@ -173,18 +173,18 @@ The frontend currently uses **mock data** (localStorage-based) and does not call
   - [x] 13.5 Implement `DELETE /api/appointments/:id` (Client only, `pending` status only) — soft-cancel, call `AuditLogger`
     - _Requirements: 2.2 (cancel own pending)_
 
-- [ ] 14. Backend: REST API — admin account management routes
-  - [ ] 14.1 Implement `POST /api/admin/accounts` (Admin only) — create staff or manager account; validate no duplicate email; insert into `users` + `staff_profiles`; call `AuditLogger`
+- [x] 14. Backend: REST API — admin account management routes
+  - [x] 14.1 Implement `POST /api/admin/accounts` (Admin only) — create staff or manager account; validate no duplicate email; insert into `users` + `staff_profiles`; call `AuditLogger`
     - _Requirements: 6.1, 6.8_
-  - [ ] 14.2 Implement `GET /api/admin/accounts` (Admin only) — list all staff and manager accounts with status; use `manager_staff_overview` view
+  - [x] 14.2 Implement `GET /api/admin/accounts` (Admin only) — list all staff and manager accounts with status; use `manager_staff_overview` view
     - _Requirements: 6.2_
-  - [ ] 14.3 Implement `PUT /api/admin/accounts/:id` (Admin only) — update account info; call `AuditLogger`
+  - [x] 14.3 Implement `PUT /api/admin/accounts/:id` (Admin only) — update account info; call `AuditLogger`
     - _Requirements: 6.3, 6.8_
-  - [ ] 14.4 Implement `DELETE /api/admin/accounts/:id` (Admin only) — soft-archive user (`archived_at`, `is_active = false`); call `AuditLogger`
+  - [x] 14.4 Implement `DELETE /api/admin/accounts/:id` (Admin only) — soft-archive user (`archived_at`, `is_active = false`); call `AuditLogger`
     - _Requirements: 6.4, 6.8_
-  - [ ] 14.5 Implement `GET /api/admin/clients` and `PUT /api/admin/clients/:id` (Admin only) — view and manage client accounts
+  - [x] 14.5 Implement `GET /api/admin/clients` and `PUT /api/admin/clients/:id` (Admin only) — view and manage client accounts
     - _Requirements: 6.2 (client accounts)_
-  - [ ] 14.6 Implement `GET /api/admin/audit-logs` and `GET /api/admin/audit-logs/export` (Admin only)
+  - [x] 14.6 Implement `GET /api/admin/audit-logs` and `GET /api/admin/audit-logs/export` (Admin only)
     - _Requirements: 9.5_
 
 - [ ] 15. Checkpoint — full API
