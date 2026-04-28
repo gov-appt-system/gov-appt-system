@@ -1,10 +1,10 @@
 /**
  * NotificationService
- * Handles all outbound email notifications using Nodemailer (SMTP / SendGrid).
+ * Handles all outbound email notifications using Resend.
  * Requirements: 2.5, 3.5, 8.1, 8.2, 8.3, 8.4, 8.5
  */
 
-import nodemailer, { Transporter } from 'nodemailer';
+import { Resend } from 'resend';
 import { logger } from '../config/logger';
 import { Appointment, AppointmentStatus } from '../types';
 
@@ -12,8 +12,8 @@ import { Appointment, AppointmentStatus } from '../types';
 // Configuration
 // ============================================================
 
-const EMAIL_FROM = process.env.EMAIL_FROM ?? 'noreply@youragency.gov.ph';
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY ?? '';
+const EMAIL_FROM = process.env.EMAIL_FROM ?? 'onboarding@resend.dev';
+const RESEND_API_KEY = process.env.RESEND_API_KEY ?? '';
 const MAX_RETRY_COUNT = parseInt(process.env.EMAIL_MAX_RETRIES ?? '3', 10);
 
 // ============================================================
@@ -33,39 +33,20 @@ interface EmailFailure {
 const failureQueue: EmailFailure[] = [];
 
 // ============================================================
-// Transporter factory
+// Resend client
 // ============================================================
 
-function createTransporter(): Transporter {
-  if (SENDGRID_API_KEY) {
-    // SendGrid SMTP relay
-    return nodemailer.createTransport({
-      host: 'smtp.sendgrid.net',
-      port: 587,
-      secure: false,
-      auth: {
-        user: 'apikey',
-        pass: SENDGRID_API_KEY,
-      },
-    });
-  }
-
-  // Fallback: local SMTP (e.g. Mailhog / Ethereal for dev)
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST ?? 'localhost',
-    port: parseInt(process.env.SMTP_PORT ?? '1025', 10),
-    secure: false,
-  });
-}
-
-const transporter = createTransporter();
+const resend = new Resend(RESEND_API_KEY);
 
 // ============================================================
 // Core send helper
 // ============================================================
 
 async function sendEmail(to: string, subject: string, html: string): Promise<void> {
-  await transporter.sendMail({ from: EMAIL_FROM, to, subject, html });
+  const { error } = await resend.emails.send({ from: EMAIL_FROM, to, subject, html });
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
 

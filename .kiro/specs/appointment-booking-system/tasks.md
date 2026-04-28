@@ -264,7 +264,7 @@ The frontend currently uses **mock data** (localStorage-based) and does not call
   - [x] 22.3 Create a `Makefile` or `scripts/deploy.sh` that runs migrations against the production Supabase instance before deploying the frontend to Vercel
     - _Requirements: 9.1_
 
-- [ ] 23. Final checkpoint
+- [x] 23. Final checkpoint
   - Run full test suite: `pnpm test`
   - Ensure all tests pass; ask the user if questions arise.
 
