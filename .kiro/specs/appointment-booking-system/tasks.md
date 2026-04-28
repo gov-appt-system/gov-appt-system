@@ -251,17 +251,17 @@ The frontend currently uses **mock data** (localStorage-based) and does not call
   - [x] 20.3 Build `AuditLogsPage` — paginated audit log viewer with filters (user, action, date range), export button
     - _Requirements: 9.5_
 
-- [ ] 21. Checkpoint — full stack integration
+- [x] 21. Checkpoint — full stack integration
   - Run all tests: `pnpm test` (root workspace command)
   - Verify end-to-end flows: client registers → books appointment → staff confirms → client views status update
   - Ensure all tests pass; ask the user if questions arise before continuing.
 
-- [ ] 22. Deployment configuration
-  - [ ] 22.1 Create `vercel.json` in `packages/frontend` with build output config; add environment variable documentation for Vercel dashboard
+- [x] 22. Deployment configuration
+  - [x] 22.1 Create `vercel.json` in `packages/frontend` with build output config; add environment variable documentation for Vercel dashboard
     - _Requirements: 9.1_
-  - [ ] 22.2 Add Supabase RLS policies for each table matching the permission matrix (clients can only read/write their own rows; staff can only read appointments for their assigned services; admin has no direct table access beyond `audit_logs`)
+  - [x] 22.2 Add Supabase RLS policies for each table matching the permission matrix (clients can only read/write their own rows; staff can only read appointments for their assigned services; admin has no direct table access beyond `audit_logs`)
     - _Requirements: 1.3, 9.5_
-  - [ ] 22.3 Create a `Makefile` or `scripts/deploy.sh` that runs migrations against the production Supabase instance before deploying the frontend to Vercel
+  - [x] 22.3 Create a `Makefile` or `scripts/deploy.sh` that runs migrations against the production Supabase instance before deploying the frontend to Vercel
     - _Requirements: 9.1_
 
 - [ ] 23. Final checkpoint

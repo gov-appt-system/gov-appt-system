@@ -81,3 +81,43 @@ The only required vars are now:
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `JWT_SECRET`
 - `SENDGRID_API_KEY`
+
+## 008_rls_policies.sql — Row Level Security
+
+### What changed
+
+Added Supabase Row Level Security (RLS) policies for all tables, matching the
+RBAC permission matrix from the design document.
+
+| File | Purpose |
+|---|---|
+| `008_rls_policies.sql` | RLS policies for all tables + helper functions |
+
+### Helper functions
+
+- `get_my_role()` — Returns the app-level role for the authenticated user by
+  reading from the `users` table. Used in policy conditions.
+- `is_assigned_to_service(service_id)` — Returns true if the authenticated user
+  has an active `service_assignments` row for the given service.
+
+### Policy summary
+
+| Table | Client | Staff | Manager | Admin |
+|---|---|---|---|---|
+| `users` | Own row (R/W) | Own row (R/W) | Own row (R/W) | All rows (R/W) |
+| `clients` | Own row (R/W) | — | — | All rows (R/W) |
+| `staff_profiles` | — | Own row (R/W) | All rows (R) | All rows (R/W) |
+| `admin_profiles` | — | — | — | Own row (R/W) |
+| `services` | Active (R) | Active (R) | All (R/W/Create) | — |
+| `appointments` | Own (R/W/Create) | Assigned services (R/W) | Assigned services (R/W) | — |
+| `service_assignments` | — | Own (R) | All (R/W/Create) | — |
+| `audit_logs` | — | — | — | All (R) |
+
+### Notes
+
+- The backend uses the **service-role key** which bypasses RLS. These policies
+  protect data when the frontend connects directly via the Supabase anon key.
+- Audit logs are **immutable** — no UPDATE or DELETE policies exist.
+- No hard deletes are possible through RLS; the soft-delete pattern is enforced
+  at the application layer.
+- Apply this file **after** all previous schema files (001–007).

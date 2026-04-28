@@ -159,3 +159,25 @@
   - **Routing**: Added `/staff-assignments` route under manager-only RoleGuard.
   - **Sidebar**: Added "Staff Assignments" menu item with `ClipboardList` icon for managers.
   - **Build**: Frontend builds cleanly (`tsc && vite build`).
+
+### Task 21: Checkpoint — Full Stack Integration
+- **Files modified:** `packages/frontend/package.json`
+- **Summary:** Ran the full monorepo test suite and build verification. All 44 backend tests pass across 6 test files (password, tracking, auth, rbac, calendar, audit). Both backend (`tsc`) and frontend (`tsc && vite build`) compile successfully. Fixed the frontend `test` script to use `--passWithNoTests` so `pnpm test` from the root exits cleanly when no frontend test files exist yet. Verified end-to-end route coverage: all backend API routes (auth, profile, services, assignments, appointments, admin) are mounted in Express, and all frontend pages and routes are wired with `ProtectedRoute` and `RoleGuard` for authentication and role-based access control. The frontend API layer uses Axios with JWT interceptor pointing at the backend.
+
+### Task 22.1: Create Vercel deployment config and environment variable documentation
+- **Files created:** `packages/frontend/vercel.json`, `packages/frontend/VERCEL_ENV.md`
+- **Summary:** Created `vercel.json` with Vite framework config, build/output settings, API proxy rewrites (forwards `/api/*` to the backend URL), SPA fallback rewrite for client-side routing, cache headers for hashed assets, and security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy). Created `VERCEL_ENV.md` documenting all required Vercel environment variables (`VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) with scope recommendations and setup steps.
+
+### Task 22.2: Supabase RLS policies matching the RBAC permission matrix
+- **Files created:** `packages/backend/src/db/schema/008_rls_policies.sql`
+- **Summary:** Created comprehensive Row Level Security policies for all six tables (`users`, `clients`, `staff_profiles`, `admin_profiles`, `services`, `appointments`, `service_assignments`, `audit_logs`). Added two helper functions: `get_my_role()` (reads the authenticated user's app role from the users table) and `is_assigned_to_service()` (checks active service assignments). Policies enforce: clients can only read/write their own rows; staff/manager can only read appointments for their assigned services; managers can manage services and staff assignments; admin can manage user accounts and read audit logs; audit logs are immutable (insert-only, no update/delete policies). Admin has no access to services or appointments per the design's intentional separation.
+
+### Task 22.3: Create deploy script for migrations and frontend deployment
+- **Files created:** `scripts/deploy.sh`
+- **Files modified:** `packages/backend/src/db/schema/SCHEMA_CHANGELOG.md`
+- **Summary:** Created `scripts/deploy.sh` that orchestrates the full deployment pipeline: applies all SQL migration files (001–008, excluding dev seed 007) against the production Supabase Postgres instance via `psql`, then builds and deploys the frontend to Vercel via the Vercel CLI. Supports `--migrate-only` and `--deploy-only` flags for partial runs. Includes prerequisite checks (psql, pnpm, vercel CLI), coloured output, and clear error messages with setup instructions. Updated the schema changelog to document the new `008_rls_policies.sql` migration.
+
+### Task 22: Deployment Configuration (Parent Complete)
+- **Files created:** `packages/frontend/vercel.json`, `packages/frontend/VERCEL_ENV.md`, `packages/backend/src/db/schema/008_rls_policies.sql`, `scripts/deploy.sh`
+- **Files modified:** `packages/backend/src/db/schema/SCHEMA_CHANGELOG.md`
+- **Summary:** Completed all three deployment subtasks. Vercel config with SPA routing, API proxy, and security headers. RLS policies for all tables matching the RBAC permission matrix. Deploy script that runs migrations then deploys frontend. Backend builds cleanly, all 44 tests pass, frontend builds cleanly.
