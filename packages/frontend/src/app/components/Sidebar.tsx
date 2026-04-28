@@ -9,7 +9,10 @@ import {
   Users, 
   FileText, 
   LogOut,
-  Briefcase
+  Briefcase,
+  UserCog,
+  UserCheck,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSidebar } from '../context/SidebarContext';
@@ -30,6 +33,9 @@ const menuItems: MenuItem[] = [
   { icon: FileText,       label: 'Process Requests',   path: '/process',      roles: ['staff', 'manager', 'admin'] },
   { icon: Briefcase,      label: 'Service Management', path: '/services',     roles: ['manager', 'admin'] },
   { icon: Users,          label: 'Staff Management',   path: '/staff',        roles: ['admin'] },
+  { icon: UserCog,        label: 'Account Management', path: '/admin/accounts', roles: ['admin'] },
+  { icon: UserCheck,      label: 'Client Management',  path: '/admin/clients',  roles: ['admin'] },
+  { icon: Shield,         label: 'Audit Logs',         path: '/admin/audit-logs', roles: ['admin'] },
   { icon: Bell,           label: 'Notifications',      path: '/notifications', roles: ['client', 'staff', 'manager', 'admin'] },
   { icon: User,           label: 'Profile',            path: '/profile',      roles: ['client', 'staff', 'manager', 'admin'] },
 ];

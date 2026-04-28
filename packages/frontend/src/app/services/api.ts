@@ -93,6 +93,17 @@ export interface AppointmentFormData {
   documents?: File[];
 }
 
+export interface RegisterData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  dateOfBirth: string;
+  governmentId: string;
+  password: string;
+}
+
 // Mock data for demo purposes (simulating API responses)
 const MOCK_USERS: Array<User & { password: string }> = [
   { id: '1', name: 'John Citizen', email: 'client@gov.ph', password: 'client123', role: 'client' },
@@ -140,6 +151,49 @@ export const authAPI = {
     localStorage.removeItem('user');
   },
   
+  register: async (data: RegisterData): Promise<{ user: User }> => {
+    // Simulate API call to POST /api/auth/register
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // Check for duplicate email
+    const existing = MOCK_USERS.find(u => u.email === data.email);
+    if (existing) {
+      throw new Error('An account with this email already exists.');
+    }
+
+    const newUser: User = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: `${data.firstName} ${data.lastName}`,
+      email: data.email,
+      role: 'client',
+    };
+
+    // In a real app the backend would persist this.
+    // For the mock we add it to the in-memory list so login works immediately.
+    MOCK_USERS.push({ ...newUser, password: data.password });
+
+    return { user: newUser };
+  },
+
+  forgotPassword: async (email: string): Promise<void> => {
+    // Simulate API call to POST /api/auth/forgot-password
+    await new Promise(resolve => setTimeout(resolve, 600));
+    // Always resolve — never reveal whether the email exists.
+    console.log(`[mock] Password reset email sent to ${email}`);
+  },
+
+  resetPassword: async (token: string, newPassword: string): Promise<void> => {
+    // Simulate API call to POST /api/auth/reset-password
+    await new Promise(resolve => setTimeout(resolve, 600));
+
+    if (!token) {
+      throw new Error('Invalid or expired reset token.');
+    }
+
+    // In a real app the backend validates the token and updates the password.
+    console.log(`[mock] Password reset with token ${token}`);
+  },
+
   getCurrentUser: (): User | null => {
     const userStr = localStorage.getItem('user');
     return userStr ? JSON.parse(userStr) : null;
@@ -207,6 +261,14 @@ export const appointmentAPI = {
     return appointments[index];
   },
   
+  getById: async (id: string): Promise<Appointment | null> => {
+    // Simulate API call to GET /api/appointments/:id
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const appointments: Appointment[] = JSON.parse(localStorage.getItem('appointments') || '[]');
+    return appointments.find((a: Appointment) => a.id === id) || null;
+  },
+
   delete: async (id: string): Promise<void> => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 400));

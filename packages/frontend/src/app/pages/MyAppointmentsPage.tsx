@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Eye, Calendar, X, AlertTriangle } from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Card } from '../components/ui/card';
@@ -28,6 +29,7 @@ import { appointmentAPI, Appointment } from '../services/api';
 import { toast } from 'sonner';
 
 export function MyAppointmentsPage() {
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -153,7 +155,7 @@ export function MyAppointmentsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setSelectedAppointment(appointment)}
+                            onClick={() => navigate(`/appointments/${appointment.id}`)}
                           >
                             <Eye size={16} className="mr-1" />
                             View

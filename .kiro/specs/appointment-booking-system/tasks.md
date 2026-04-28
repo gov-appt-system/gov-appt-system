@@ -39,9 +39,8 @@ The frontend currently uses **mock data** (localStorage-based) and does not call
 | `Service` missing `duration`, `capacity`, `createdBy` | Backend has these fields | Frontend mock doesn't include them |
 | Frontend mock `Service` has `operatingDays`, `maxDailySlots` | Backend has `operatingHours.daysOfWeek`, `capacity` | Different shape |
 
-### Missing Frontend Features (no `ProtectedRoute` enforcement)
-- Routes are not guarded — any user can navigate to any page. The `Sidebar` filters menu items by role, but direct URL access is unprotected.
-- `AuthContext` does not expose a `ProtectedRoute` component or role-guard wrapper (task 16.3 marked done but incomplete).
+### Frontend Route Protection (resolved)
+- ✅ `ProtectedRoute` and `RoleGuard` components now enforce authentication and role-based access on all routes. Direct URL access by unauthenticated or unauthorized users is redirected appropriately.
 
 ## Tasks
 
@@ -198,21 +197,21 @@ The frontend currently uses **mock data** (localStorage-based) and does not call
     - _Requirements: 1.1_
   - [x] 16.2 Create Axios instance with base URL from env, JWT interceptor (attaches `Authorization` header), and 401 redirect to login
     - _Requirements: 1.1, 1.3_
-  - [-] 16.3 Create `AuthContext` (stores user role and token), `ProtectedRoute` component (redirects unauthenticated users), and role-guard HOC/wrapper
-    - ⚠️ `AuthContext` exists but `ProtectedRoute` and role-guard wrapper are **not implemented**. Routes are unguarded — direct URL access bypasses role checks. Sidebar filters menu items by role but that's cosmetic only.
+  - [x] 16.3 Create `AuthContext` (stores user role and token), `ProtectedRoute` component (redirects unauthenticated users), and role-guard HOC/wrapper
+    - ✅ `AuthContext` enhanced with `role`, `hasRole()`, and session-initialisation guard. `ProtectedRoute` redirects unauthenticated users to `/login` (preserving original URL in `state.from`). `RoleGuard` restricts routes by role and redirects to the user's dashboard. All routes in `routes.tsx` are now wrapped with appropriate guards.
     - _Requirements: 1.3_
 
-- [-] 17. Frontend: authentication pages
+- [x] 17. Frontend: authentication pages
   - [x] 17.1 Build `LoginPage` — email/password form, calls `POST /api/auth/login`, stores token in `AuthContext`, redirects to role-appropriate dashboard
     - ⚠️ Minor: `user` variable declared but never read (unused import from `useAuth`). Login uses mock data, not real API.
     - _Requirements: 1.1, 1.2_
-  - [ ] 17.2 Build `RegisterPage` (client self-registration) — full registration form with client fields, calls `POST /api/auth/register`, enforces password complexity in UI
+  - [x] 17.2 Build `RegisterPage` (client self-registration) — full registration form with client fields, calls `POST /api/auth/register`, enforces password complexity in UI
     - _Requirements: 1.5, 1.6_
-  - [ ] 17.3 Build `ForgotPasswordPage` and `ResetPasswordPage` — email input → reset link flow
+  - [x] 17.3 Build `ForgotPasswordPage` and `ResetPasswordPage` — email input → reset link flow
     - ⚠️ Login page has "Forgot Password?" and "Register Now" buttons but they are non-functional (no navigation).
     - _Requirements: 1.7_
 
-- [-] 18. Frontend: client-facing pages
+- [x] 18. Frontend: client-facing pages
   - [x] 18.1 Build `BookingCalendarPage` — fetches active services (`GET /api/services`), displays available time slots from `GET /api/services/:id/slots`, prevents selection of full slots
     - ⚠️ Uses hardcoded `SERVICE_CATEGORIES` and `TIME_SLOTS` from mock data, not real API. Service model doesn't match backend.
     - _Requirements: 2.1, 2.2_
@@ -222,7 +221,7 @@ The frontend currently uses **mock data** (localStorage-based) and does not call
   - [x] 18.3 Build `AppointmentHistoryPage` — lists client's appointments (`GET /api/appointments`), supports search by tracking number and date range
     - ⚠️ Date range filter not implemented (only search by tracking number and status).
     - _Requirements: 4.1, 4.2, 4.4_
-  - [ ] 18.4 Build `AppointmentDetailPage` — read-only view of a single appointment with status timeline (`GET /api/appointments/:id`)
+  - [x] 18.4 Build `AppointmentDetailPage` — read-only view of a single appointment with status timeline (`GET /api/appointments/:id`)
     - ⚠️ Not a separate page. `MyAppointmentsPage` has a detail modal but no status timeline.
     - _Requirements: 4.3_
   - [x] 18.5 Build `ClientProfilePage` — view/edit profile, change password, deactivate account
@@ -243,13 +242,13 @@ The frontend currently uses **mock data** (localStorage-based) and does not call
     - ⚠️ `StaffManagementPage` exists but is more of an admin account management page than a service-specific staff assignment page. Missing service-scoped assignment UI.
     - _Requirements: 6.5, 6.6, 6.7_
 
-- [ ] 20. Frontend: admin pages
-  - [ ] 20.1 Build `AdminAccountsPage` — list all staff/manager accounts, create account form, archive action
+- [x] 20. Frontend: admin pages
+  - [x] 20.1 Build `AdminAccountsPage` — list all staff/manager accounts, create account form, archive action
     - ⚠️ `StaffManagementPage` partially covers this but is not admin-specific and lacks archive (soft-delete) action.
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
-  - [ ] 20.2 Build `AdminClientsPage` — list and manage client accounts
+  - [x] 20.2 Build `AdminClientsPage` — list and manage client accounts
     - _Requirements: 6.2 (clients)_
-  - [ ] 20.3 Build `AuditLogsPage` — paginated audit log viewer with filters (user, action, date range), export button
+  - [x] 20.3 Build `AuditLogsPage` — paginated audit log viewer with filters (user, action, date range), export button
     - _Requirements: 9.5_
 
 - [ ] 21. Checkpoint — full stack integration

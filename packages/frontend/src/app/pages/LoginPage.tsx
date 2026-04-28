@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Building2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -13,10 +13,24 @@ interface LoginFormData {
   password: string;
 }
 
+/** Return the default landing page for a given role. */
+function dashboardForRole(role: string): string {
+  return role === 'client' ? '/dashboard' : '/staff-dashboard';
+}
+
 export function LoginPage() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { login, user } = useAuth();
+  const location = useLocation();
+  const { login, isAuthenticated, role } = useAuth();
+
+  // If the user is already authenticated, redirect away from the login page.
+  useEffect(() => {
+    if (isAuthenticated && role) {
+      const from = (location.state as { from?: Location })?.from;
+      navigate(from ?? dashboardForRole(role), { replace: true });
+    }
+  }, [isAuthenticated, role, navigate, location.state]);
   
   const {
     register,
@@ -31,22 +45,13 @@ export function LoginPage() {
       const success = await login(data.email, data.password);
       if (success) {
         toast.success('Login successful!');
-        
-        // Get user role from the auth context
-        // We need to access the user after successful login
-        // The auth context will be updated, so we check after a brief moment
-        setTimeout(() => {
-          // Access user from auth context or local storage
-          const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-          
-          // Redirect based on role
-          if (currentUser.role === 'client') {
-            navigate('/dashboard');
-          } else {
-            // staff, manager, admin all go to staff-dashboard
-            navigate('/staff-dashboard');
-          }
-        }, 100);
+
+        // After login the AuthContext state updates synchronously in the
+        // same render cycle, so read the role from localStorage (which
+        // authAPI.login already wrote) to decide where to redirect.
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const from = (location.state as { from?: Location })?.from;
+        navigate(from ?? dashboardForRole(currentUser.role), { replace: true });
       } else {
         const errorMsg = 'Invalid email or password. Please check your credentials.';
         setError(errorMsg);
@@ -129,14 +134,17 @@ export function LoginPage() {
           </form>
 
           <div className="mt-6 space-y-3">
-            <button className="text-[var(--gov-primary)] hover:underline text-sm w-full text-center">
+            <Link
+              to="/forgot-password"
+              className="text-[var(--gov-primary)] hover:underline text-sm w-full text-center block"
+            >
               Forgot Password?
-            </button>
+            </Link>
             <div className="text-center text-sm text-gray-600">
               Don't have an account?{' '}
-              <button className="text-[var(--gov-primary)] hover:underline">
+              <Link to="/register" className="text-[var(--gov-primary)] hover:underline">
                 Register Now
-              </button>
+              </Link>
             </div>
           </div>
 
