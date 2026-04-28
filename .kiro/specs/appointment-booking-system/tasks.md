@@ -78,7 +78,7 @@ The frontend currently uses **mock data** (localStorage-based) and does not call
     - **Validates: Requirements 1.6, 5.4**
   - [x] 3.4 Implement `generateTrackingNumber(): string` — produces a unique alphanumeric string (e.g. `APT-YYYYMMDD-XXXXX`)
     - _Requirements: 2.4_
-  - [ ]* 3.5 Write property test for `generateTrackingNumber`
+  - [x] 3.5 Write property test for `generateTrackingNumber`
     - **Property 2: Tracking numbers are unique** — for any N calls to `generateTrackingNumber`, all N results are distinct
     - **Property 3: Tracking number format** — for any generated tracking number, `validateTrackingNumber` returns true
     - **Validates: Requirements 2.4**
@@ -149,10 +149,10 @@ The frontend currently uses **mock data** (localStorage-based) and does not call
   - [x] 10.3 Write JWT authentication middleware (`authenticateToken`) and role-guard middleware (`requireRole(...roles)`) used by all protected routes
     - _Requirements: 1.3_
 
-- [ ] 11. Backend: REST API — services routes
-  - [ ] 11.1 Implement `GET /api/services` (active services, accessible to Client/Staff/Manager) and `GET /api/services/:id`
+- [x] 11. Backend: REST API — services routes
+  - [x] 11.1 Implement `GET /api/services` (active services, accessible to Client/Staff/Manager) and `GET /api/services/:id`
     - _Requirements: 7.2_
-  - [ ] 11.2 Implement `POST /api/services` (Manager only), `PUT /api/services/:id` (Manager only), `DELETE /api/services/:id` (soft-archive, Manager only)
+  - [x] 11.2 Implement `POST /api/services` (Manager only), `PUT /api/services/:id` (Manager only), `DELETE /api/services/:id` (soft-archive, Manager only)
     - Enforce uniqueness check on service name; call `AuditLogger` on every mutation
     - _Requirements: 7.1, 7.3, 7.4, 7.5, 7.6_
 

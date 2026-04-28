@@ -2,6 +2,7 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import authRouter from './routes/auth';
 import profileRouter from './routes/profile';
+import servicesRouter from './routes/services';
 import { logger } from './config/logger';
 
 const app: Express = express();
@@ -23,6 +24,7 @@ app.get('/health', (_req, res) => {
 // API routes
 app.use('/api/auth', authRouter);
 app.use('/api/profile', profileRouter);
+app.use('/api/services', servicesRouter);
 
 // Global error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
