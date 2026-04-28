@@ -4,6 +4,7 @@
 .env.*.local
 text.ttxt
 
+.kiro/
 
 # Dependencies
 node_modules/
