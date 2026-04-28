@@ -8,10 +8,22 @@
     "dev": "pnpm --recursive dev"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
     "typescript": "^5.4.0"
   },
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@tailwindcss/oxide",
+      "esbuild",
+      "lightningcss"
+    ]
+  },
+  "dependencies": {
+    "autoprefixer": "^10.4.27",
+    "react-router-dom": "^6.30.3"
   }
 }

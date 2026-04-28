@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Task Change Log",
+  "description": "Automatically generates a change log summarizing all changes made after a spec task is completed. The log captures what files were modified, added, or removed during the task execution.",
+  "version": "1",
+  "when": {
+    "type": "postTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A spec task has just been completed. Generate a concise change log entry summarizing the work done for this task. Include: 1) The task name/description, 2) Files created or modified, 3) A brief summary of the changes made. Append this entry to a CHANGELOG.md file in the project root. Use markdown formatting with the current date as a heading. If CHANGELOG.md doesn't exist, create it with a top-level heading first."
+  }
+}

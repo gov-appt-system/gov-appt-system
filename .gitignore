@@ -1,2 +1,34 @@
+# Environment variables
 .env
-node_modules
+.env.local
+.env.*.local
+text.ttxt
+
+.kiro/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+.idea/
+
+# Test coverage
+coverage/
+
+# Agent memory Bank
+.amazonq/*

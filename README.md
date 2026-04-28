@@ -1,118 +1,113 @@
 # Government Appointment Booking System
 
-A government agency appointment scheduling system with role-based access control,
-real-time availability, and email notifications.
+A government agency appointment scheduling system with role-based access control, real-time availability, and email notifications.
+
+
 
 **Working Prototype (Frontend):**
 [View Figma Prototype](https://www.figma.com/make/J66xF8HBB6PSimi7D7KHdo/Government-Appointment-Booking-System?p=f&t=MVCBImR2iRFXcUt9-0&preview-route=%2Flogin)
 
-> **Status:** Backend API in active development. Frontend in progress.
-
+> **Status:** Backend API accomplished as well as Frontend | Rigorous testing needed
 ---
 
 ## Team Branches pag may guimalaw sa main branch ggulpihin q
 
-|MAIN BRANCH FOR DEPLOYMENT |`main`|
-| Staging Branch (pre-deployment and merging of front/back) |`staging-branch`|
-| Frontend | `frontend-branch` |
-| Backend (Kate) | `branch-kate` |
-| Backend (Gato) | `branch-gato` |
+- Node.js 18+
+- pnpm (`npm install -g pnpm`)
+- A [Supabase](https://supabase.com) project (free tier works)
 
 ---
 
-## 1. Install Git (Windows)
-
-1. Go to https://git-scm.com/download/win
-2. Click **"Click here to download"** — it auto-detects 64-bit Windows
-3. Run the downloaded `.exe` installer
-4. During setup, keep all defaults **except**:
-   - On **"Choosing the default editor"** → select **Visual Studio Code** (if you use it)
-   - On **"Adjusting your PATH environment"** → select **"Git from the command line and also from 3rd-party software"**
-5. Click **Next** through the rest, then **Install**
-6. Verify the install — open **Command Prompt** or **PowerShell** and run:
+## Quick Setup (after cloning)
 
 ```bash
-git --version
+bash scripts/setup.sh
 ```
 
-You should see something like `git version 2.x.x.windows.x`.
+This will:
+- Verify pnpm are available
+- Run `pnpm install` across all packages
+`packages/backend/.env` if it doesn't exist yet
 
 ---
 
-## 2. Clone the Repository
-
-Go to terminal on VS Code, use this command para mabilis [ctrl + `]
-
-```
-# Clone the repo
-git clone https://github.com/gov-appt-system/gov-appt-system.git
-
-# Enter the project folder
-cd gov-appointment-app
-```
-
-### Install Dependencies
-
-Make sure you have **Node.js 18+** and **pnpm** installed first (idk pa sa frontend magkaiba version soo here's what we do for now yall, gawin niyo sa vscode per usual)
+## Manual Setup
 
 ```bash
-# Install pnpm if you don't have it
-npm install -g pnpm
-
-# Install all dependencies from the root
+# 1. Install dependencies
 pnpm install
+pnpm approve-builds
+
+# 2. Configure environment
+cp packages/backend/.env.example packages/backend/.env
+# then edit packages/backend/.env with your actual values
+```
+
+### Required environment variables (`packages/backend/.env`)
+
+| Variable | Description |
+|---|---|
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase anon/public key |
+key (server-side only) |
+| `DATABASE_URL` | Direct Postgres connection string (for Knex migrations) |
+| `JWT_SECRET` | Secret for signing JWTs (min 32 chars) |
+| `JWT_EXPIRES_IN` | Token lifetime, e.g. `8h` |
+| `SENDGRID_API_KEY` | SendGrid API key for email |
+| `EMAIL_FROM` | Sender address, e.g. `noreply@youragency.gov.ph` |
+| `PORT` | Backend port (default `3000`) |
+| `FRONTEND_URL` | Used in reset-password email links |
+
+---
+
+## Database
+
+```bash
+cd packages/backend
+
+# Apply all migrations
+te
+
+# Rollback last migration
+pnpm run migrate:rollback
+
+# Seed dev accounts (client, staff, manager, admin)
+pnpm run seed
+
+# Reset database (rollback all + re-migrate + seed)
+pnpm run db:reset
 ```
 
 ---
 
-## 3. Switch to Your Team's Branch
+## Running the Backend
 
 ```bash
-# Frontend team
-git checkout frontend-branch
-
-# Backend — Kate
-git checkout branch-kate
-
-# Backend — Gato
-git checkout branch-gato
+cd packages/backend
+pnpm run dev
 ```
+
+Server starts at `http://localhost:3000`
+
+Health check: `GET http://localhost:3000/health`
 
 ---
 
-## 4. Basic Git Commands
-
-### Check status and history
+## Testing
 
 ```bash
-# See what files you've changed
-git status
+# All tests (from root)
+pnpm test
 
-# See commit history
-git log --oneline
+# Backend only
+cd packages/backend && pnpm test
+
+# eh since backend branch to (root folder works too_
+cd ..
+pnpm --filter backend test 2>&1
 ```
 
-### Pull latest changes from remote
-
-```bash
-# Always pull before starting work to avoid conflicts
-git pull origin <your-branch-name>
-```
-
-### Stage and commit your changes
-
-```bash
-# Stage a specific file
-git add filename.ts
-
-# Stage ALL changed files
-git add .
-
-# Commit with a message
-git commit -m "your message here"
-```
-
-### Push your commits
+Tests use [Vitest](https://vitest.dev/) and run once (no watch mode).
 
 ```bash
 git push origin <your-branch-name>
@@ -121,15 +116,12 @@ git push origin <your-branch-name>
 ### Examples per team
 
 ```bash
-# Frontend
-git push origin frontend-branch
+# Staging branch
+-> staging-branch kumbaga predployment
 
-# Backend Kate
-git push origin branch-kate
+# main branch
+->main : main repo used by vercel and supabase
 
-# Backend Gato
-git push origin branch-gato
-```
 
 ---
 
