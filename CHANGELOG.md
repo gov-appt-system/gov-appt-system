@@ -98,3 +98,29 @@
 - **Files created:** `packages/backend/src/routes/assignments.ts`
 - **Files modified:** `packages/backend/src/index.ts`
 - **Summary:** Completed all staff assignment CRUD routes. Created a dedicated assignments router mounted at `/api/services/:id/assignments` with three endpoints: POST (assign staff), GET (list assignments with staff profile details), and DELETE (soft-archive assignment). All routes enforce Manager-only access via `requireRole(UserRole.MANAGER)` and log actions via `AuditLogger`. TypeScript build passes and all 38 existing tests pass.
+
+### Task 13.1: POST /api/appointments (Client only — book appointment)
+- **Files created:** `packages/backend/src/routes/appointments.ts`
+- **Files modified:** `packages/backend/src/index.ts`
+- **Summary:** Implemented `POST /api/appointments` endpoint for clients to book appointments. Validates request body (serviceId, dateTime, duration, personalDetails with required sub-fields), verifies the service exists and is active, checks slot availability via `CalendarService.checkSlotAvailability`, reserves the slot atomically via `CalendarService.reserveSlot`, generates a tracking number via `generateTrackingNumber`, inserts the appointment into the database with status `pending` and `personal_details` as JSONB, sends booking confirmation email (fire-and-forget), and logs the action via `AuditLogger`. Returns 201 with the created appointment including tracking number. Registered the appointments router at `/api/appointments` in the Express app.
+
+### Task 13.2: GET /api/appointments (role-based appointment listing)
+- **Files modified:** `packages/backend/src/routes/appointments.ts`
+- **Summary:** Implemented `GET /api/appointments` with role-based filtering. Clients see only their own appointments (by `client_id`). Staff and Managers see appointments for their assigned services (via active `service_assignments`). Admin gets 403 per the permission matrix. Supports optional query parameters: `status`, `serviceId`, and `search` (tracking number ilike). Results sorted by `appointment_date_time` descending. Response maps snake_case DB columns to camelCase.
+
+### Task 13.3: GET /api/appointments/:id and GET /api/appointments/track/:trackingNumber
+- **Files modified:** `packages/backend/src/routes/appointments.ts`
+- **Summary:** Added two routes: `GET /api/appointments/track/:trackingNumber` (Client only — looks up by tracking number, verifies ownership) and `GET /api/appointments/:id` (Client sees own, Staff/Manager sees assigned services, Admin gets 403). Extracted shared `mapAppointmentRow()` helper for snake_case-to-camelCase mapping. The `/track/` route is defined before `/:id` to prevent Express param collision.
+
+### Task 13.4: PUT /api/appointments/:id (Staff/Manager — status update and remarks)
+- **Files modified:** `packages/backend/src/routes/appointments.ts`
+- **Summary:** Implemented `PUT /api/appointments/:id` for Staff and Manager roles. Enforces status transition rules (`pending→confirmed/cancelled`, `confirmed→completed/cancelled/no_show`, terminal statuses reject updates). Validates service hours via `isWithinServiceHours` before status changes. Soft-archives appointments on terminal statuses (`archived_at = now()`). Sets `processed_by` to the acting user. Sends status update email (fire-and-forget) and logs via `AuditLogger`. Added `VALID_STATUS_TRANSITIONS` map and `TERMINAL_STATUSES` constants.
+
+### Task 13.5: DELETE /api/appointments/:id (Client — soft-cancel pending appointment)
+- **Files modified:** `packages/backend/src/routes/appointments.ts`
+- **Summary:** Implemented `DELETE /api/appointments/:id` for Client role only. Verifies the appointment belongs to the requesting client and is in `pending` status (returns 400 otherwise). Soft-cancels by setting `status = 'cancelled'`, `archived_at = now()`, and `updated_at = now()`. Logs the cancellation via `AuditLogger`. No records are permanently deleted.
+
+### Task 13: Backend REST API — Appointment Routes (Parent Complete)
+- **Files created:** `packages/backend/src/routes/appointments.ts`
+- **Files modified:** `packages/backend/src/index.ts`
+- **Summary:** Completed all five appointment route subtasks. The appointments router provides: `POST /` (client booking with slot validation, tracking number, email confirmation), `GET /` (role-based listing with filters), `GET /track/:trackingNumber` (client tracking lookup), `GET /:id` (single appointment with access control), `PUT /:id` (staff/manager status updates with transition validation and service hours check), and `DELETE /:id` (client soft-cancel of pending appointments). All routes enforce RBAC, audit-log mutations, and follow the soft-delete pattern. Backend builds cleanly and all 38 tests pass.

@@ -161,16 +161,16 @@ The frontend currently uses **mock data** (localStorage-based) and does not call
   - [x] 12.2 Implement `GET /api/services/:id/assignments` (Manager only) and `DELETE /api/services/:id/assignments/:assignmentId` (soft-archive, Manager only)
     - _Requirements: 6.6, 6.7, 6.8_
 
-- [ ] 13. Backend: REST API — appointment routes
-  - [ ] 13.1 Implement `POST /api/appointments` (Client only) — validate slot availability via `CalendarService`, generate tracking number via `AppointmentTracker`, persist appointment, send booking confirmation email, call `AuditLogger`
+- [x] 13. Backend: REST API — appointment routes
+  - [x] 13.1 Implement `POST /api/appointments` (Client only) — validate slot availability via `CalendarService`, generate tracking number via `AppointmentTracker`, persist appointment, send booking confirmation email, call `AuditLogger`
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 9.1_
-  - [ ] 13.2 Implement `GET /api/appointments` (Client: own appointments; Staff/Manager: assigned service queue filtered by `service_assignments`)
+  - [x] 13.2 Implement `GET /api/appointments` (Client: own appointments; Staff/Manager: assigned service queue filtered by `service_assignments`)
     - _Requirements: 3.1, 4.1, 4.2_
-  - [ ] 13.3 Implement `GET /api/appointments/:id` and `GET /api/appointments/track/:trackingNumber` (Client only for tracking)
+  - [x] 13.3 Implement `GET /api/appointments/:id` and `GET /api/appointments/track/:trackingNumber` (Client only for tracking)
     - _Requirements: 4.1, 4.3, 4.4_
-  - [ ] 13.4 Implement `PUT /api/appointments/:id` (Staff/Manager only) — update status (`pending` → `confirmed` → `completed`/`cancelled`/`no_show`), add remarks, validate service hours via `CalendarService`, soft-archive on `completed`/`cancelled`, send status update email, call `AuditLogger`
+  - [x] 13.4 Implement `PUT /api/appointments/:id` (Staff/Manager only) — update status (`pending` → `confirmed` → `completed`/`cancelled`/`no_show`), add remarks, validate service hours via `CalendarService`, soft-archive on `completed`/`cancelled`, send status update email, call `AuditLogger`
     - _Requirements: 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
-  - [ ] 13.5 Implement `DELETE /api/appointments/:id` (Client only, `pending` status only) — soft-cancel, call `AuditLogger`
+  - [x] 13.5 Implement `DELETE /api/appointments/:id` (Client only, `pending` status only) — soft-cancel, call `AuditLogger`
     - _Requirements: 2.2 (cancel own pending)_
 
 - [ ] 14. Backend: REST API — admin account management routes
