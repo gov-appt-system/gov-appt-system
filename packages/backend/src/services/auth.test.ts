@@ -24,7 +24,7 @@ import {
 } from './auth';
 import { UserRole } from '../types/index';
 import { supabase } from '../config/supabase';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 describe('hashPassword', () => {
   it('produces a bcrypt hash that verifies against the original password', async () => {
