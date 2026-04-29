@@ -4,8 +4,7 @@ A government agency appointment scheduling system with role-based access control
 
 
 
-**Working Prototype (Frontend):**
-[View Figma Prototype](https://www.figma.com/make/J66xF8HBB6PSimi7D7KHdo/Government-Appointment-Booking-System?p=f&t=MVCBImR2iRFXcUt9-0&preview-route=%2Flogin)
+Frontend Link: https://gov-appt-system-frontend.vercel.app/
 
 > **Status:** Backend API accomplished as well as Frontend | Rigorous testing needed
 ---
@@ -142,8 +141,6 @@ git push origin <your-branch>
 ```
 
 ---
-
-## Tips
 
 - **Never push directly to `main`** — always work on your team's branch
 - Write clear commit messages (e.g. `"add login form validation"` not `"fix stuff"`)
