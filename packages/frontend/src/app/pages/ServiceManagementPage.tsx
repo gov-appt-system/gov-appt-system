@@ -26,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
-import { realServiceAPI, BackendService } from '../services/api';
+import { serviceAPI, BackendService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 
@@ -76,7 +76,7 @@ export function ServiceManagementPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await realServiceAPI.getAll();
+      const data = await serviceAPI.getAll();
       setServices(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load services');
@@ -166,11 +166,11 @@ export function ServiceManagementPage() {
       };
 
       if (editingService) {
-        const updated = await realServiceAPI.update(editingService.id, payload);
+        const updated = await serviceAPI.update(editingService.id, payload);
         setServices(prev => prev.map(s => s.id === editingService.id ? updated : s));
         toast.success('Service updated successfully!');
       } else {
-        const created = await realServiceAPI.create(payload);
+        const created = await serviceAPI.create(payload);
         setServices(prev => [...prev, created]);
         toast.success('Service created successfully!');
       }
@@ -190,7 +190,7 @@ export function ServiceManagementPage() {
   const handleArchive = async () => {
     if (!archiveServiceId) return;
     try {
-      await realServiceAPI.archive(archiveServiceId);
+      await serviceAPI.archive(archiveServiceId);
       setServices(prev => prev.filter(s => s.id !== archiveServiceId));
       toast.success('Service archived successfully!');
     } catch (err: unknown) {

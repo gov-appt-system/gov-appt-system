@@ -11,7 +11,6 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { appointmentAPI } from '../services/api';
-import { TIME_SLOTS } from '../data/mockData';
 import { toast } from 'sonner';
 
 type Step = 'category' | 'service' | 'datetime' | 'details';
@@ -22,6 +21,17 @@ interface AppointmentDetailsForm {
   phone: string;
   address: string;
 }
+
+const TIME_SLOTS = [
+  { time: '8:00 AM', available: true },
+  { time: '9:00 AM', available: true },
+  { time: '10:00 AM', available: true },
+  { time: '11:00 AM', available: true },
+  { time: '1:00 PM', available: true },
+  { time: '2:00 PM', available: true },
+  { time: '3:00 PM', available: true },
+  { time: '4:00 PM', available: true },
+];
 
 const SERVICE_CATEGORIES = [
   {
@@ -141,10 +151,17 @@ export function BookAppointmentPage() {
     if (selectedDate && selectedService) {
       const loadBookedSlots = async () => {
         try {
-          const appointments = await appointmentAPI.getAll();
+          const appointments = await appointmentAPI.getAll({ serviceId: selectedService });
           const bookedTimes = appointments
-            .filter(apt => apt.date === selectedDate && apt.serviceId === selectedService)
-            .map(apt => apt.time);
+            .filter(apt => {
+              const aptDate = new Date(apt.dateTime);
+              const aptDateStr = `${aptDate.getFullYear()}-${String(aptDate.getMonth() + 1).padStart(2, '0')}-${String(aptDate.getDate()).padStart(2, '0')}`;
+              return aptDateStr === selectedDate;
+            })
+            .map(apt => {
+              const d = new Date(apt.dateTime);
+              return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            });
           setBookedSlots(bookedTimes);
         } catch {
           console.error('Failed to load booked slots');
@@ -187,14 +204,28 @@ export function BookAppointmentPage() {
   const onSubmit = async (data: AppointmentDetailsForm) => {
     setLoading(true);
     try {
+      // Build ISO dateTime from selected date + time
+      const timeParts = selectedTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      let hours = parseInt(timeParts![1]);
+      const minutes = parseInt(timeParts![2]);
+      const ampm = timeParts![3].toUpperCase();
+      if (ampm === 'PM' && hours !== 12) hours += 12;
+      if (ampm === 'AM' && hours === 12) hours = 0;
+      const dateTime = `${selectedDate}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+
+      const [firstName, ...lastParts] = data.fullName.split(' ');
+      const lastName = lastParts.join(' ') || firstName;
+
       const appointment = await appointmentAPI.create({
         serviceId: selectedService,
-        date: selectedDate,
-        time: selectedTime,
-        fullName: data.fullName,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
+        dateTime,
+        personalDetails: {
+          firstName,
+          lastName,
+          phoneNumber: data.phone,
+          email: data.email,
+          address: data.address,
+        },
       });
       toast.success('Appointment booked successfully!');
       navigate(`/confirmation/${appointment.trackingNumber}`, {

@@ -149,25 +149,9 @@ export function LoginPage() {
           </div>
 
           <div className="mt-8 pt-6 border-t border-gray-200">
-            <p className="text-xs text-gray-500 text-center mb-3">Demo Accounts:</p>
-            <div className="space-y-2 text-xs text-gray-600">
-              <div className="flex justify-between">
-                <span>Client:</span>
-                <span>client@gov.ph / client123</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Staff:</span>
-                <span>staff@gov.ph / staff123</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Manager:</span>
-                <span>manager@gov.ph / manager123</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Admin:</span>
-                <span>admin@gov.ph / admin123</span>
-              </div>
-            </div>
+            <p className="text-xs text-gray-500 text-center">
+              Government Appointment System
+            </p>
           </div>
         </div>
       </div>

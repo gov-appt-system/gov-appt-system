@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
-import { appointmentAPI, Appointment } from '../services/api';
+import { appointmentAPI, BackendAppointment } from '../services/api';
 import { toast } from 'sonner';
 
 /**
@@ -110,7 +110,7 @@ function getStatusBadgeVariant(status: string): 'default' | 'secondary' | 'destr
  * Derives a status timeline from the appointment's current status and creation date.
  * In a real implementation this would come from the backend's status history table.
  */
-function buildTimeline(appointment: Appointment): StatusEvent[] {
+function buildTimeline(appointment: BackendAppointment): StatusEvent[] {
   const currentStatus = appointment.status;
   const createdAt = new Date(appointment.createdAt);
   const events: StatusEvent[] = [];
@@ -163,7 +163,7 @@ function buildTimeline(appointment: Appointment): StatusEvent[] {
 export function AppointmentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [appointment, setAppointment] = useState<Appointment | null>(null);
+  const [appointment, setAppointment] = useState<BackendAppointment | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -314,7 +314,7 @@ export function AppointmentDetailPage() {
                 <FileText size={18} className="text-gray-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm text-gray-500">Service</p>
-                  <p className="font-medium">{appointment.service}</p>
+                  <p className="font-medium">{appointment.serviceId}</p>
                 </div>
               </div>
 
@@ -325,7 +325,7 @@ export function AppointmentDetailPage() {
                 <div>
                   <p className="text-sm text-gray-500">Date</p>
                   <p className="font-medium">
-                    {new Date(appointment.date).toLocaleDateString(undefined, {
+                    {new Date(appointment.dateTime).toLocaleDateString(undefined, {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
@@ -341,7 +341,7 @@ export function AppointmentDetailPage() {
                 <Clock size={18} className="text-gray-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm text-gray-500">Time</p>
-                  <p className="font-medium">{appointment.time}</p>
+                  <p className="font-medium">{new Date(appointment.dateTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
               </div>
 
@@ -369,7 +369,7 @@ export function AppointmentDetailPage() {
                 <User size={18} className="text-gray-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm text-gray-500">Full Name</p>
-                  <p className="font-medium">{appointment.clientName}</p>
+                  <p className="font-medium">{appointment.personalDetails.firstName} {appointment.personalDetails.lastName}</p>
                 </div>
               </div>
 
@@ -379,7 +379,7 @@ export function AppointmentDetailPage() {
                 <Mail size={18} className="text-gray-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm text-gray-500">Email</p>
-                  <p className="font-medium">{appointment.clientEmail}</p>
+                  <p className="font-medium">{appointment.personalDetails.email}</p>
                 </div>
               </div>
 
@@ -389,7 +389,7 @@ export function AppointmentDetailPage() {
                 <Phone size={18} className="text-gray-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm text-gray-500">Phone</p>
-                  <p className="font-medium">{appointment.clientPhone}</p>
+                  <p className="font-medium">{appointment.personalDetails.phoneNumber}</p>
                 </div>
               </div>
             </CardContent>
@@ -397,13 +397,13 @@ export function AppointmentDetailPage() {
         </div>
 
         {/* Remarks / Notes */}
-        {appointment.notes && (
+        {appointment.remarks && (
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Remarks</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 whitespace-pre-wrap">{appointment.notes}</p>
+              <p className="text-gray-700 whitespace-pre-wrap">{appointment.remarks}</p>
             </CardContent>
           </Card>
         )}

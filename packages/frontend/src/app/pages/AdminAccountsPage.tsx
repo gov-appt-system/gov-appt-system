@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   Plus,
@@ -41,23 +41,11 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { toast } from 'sonner';
+import { adminAPI, StaffAccount } from '../services/api';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
-
-interface StaffAccount {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  employeeId: string;
-  department: string;
-  role: 'staff' | 'manager';
-  isActive: boolean;
-  archivedAt: string | null;
-  createdAt: string;
-}
 
 interface CreateAccountFormData {
   firstName: string;
@@ -77,66 +65,12 @@ interface EditAccountFormData {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Initial mock data                                                  */
-/* ------------------------------------------------------------------ */
-
-const INITIAL_ACCOUNTS: StaffAccount[] = [
-  {
-    id: '1',
-    firstName: 'Maria',
-    lastName: 'Staff',
-    email: 'staff@gov.ph',
-    employeeId: 'EMP-001',
-    department: 'Civil Registry',
-    role: 'staff',
-    isActive: true,
-    archivedAt: null,
-    createdAt: '2026-01-15T08:00:00',
-  },
-  {
-    id: '2',
-    firstName: 'Carlos',
-    lastName: 'Manager',
-    email: 'manager@gov.ph',
-    employeeId: 'EMP-002',
-    department: 'All Departments',
-    role: 'manager',
-    isActive: true,
-    archivedAt: null,
-    createdAt: '2026-01-10T08:00:00',
-  },
-  {
-    id: '3',
-    firstName: 'Ana',
-    lastName: 'Processor',
-    email: 'ana@gov.ph',
-    employeeId: 'EMP-003',
-    department: 'Treasury Office',
-    role: 'staff',
-    isActive: true,
-    archivedAt: null,
-    createdAt: '2026-02-01T08:00:00',
-  },
-  {
-    id: '4',
-    firstName: 'Roberto',
-    lastName: 'Supervisor',
-    email: 'roberto@gov.ph',
-    employeeId: 'EMP-004',
-    department: 'Business Affairs',
-    role: 'manager',
-    isActive: true,
-    archivedAt: null,
-    createdAt: '2026-02-10T08:00:00',
-  },
-];
-
-/* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
 export function AdminAccountsPage() {
-  const [accounts, setAccounts] = useState<StaffAccount[]>(INITIAL_ACCOUNTS);
+  const [accounts, setAccounts] = useState<StaffAccount[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Dialog state
   const [createOpen, setCreateOpen] = useState(false);
@@ -148,6 +82,21 @@ export function AdminAccountsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'staff' | 'manager'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('all');
+
+  // Load accounts from API
+  useEffect(() => {
+    const loadAccounts = async () => {
+      try {
+        const data = await adminAPI.getAccounts();
+        setAccounts(data);
+      } catch (err) {
+        toast.error('Failed to load accounts');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadAccounts();
+  }, []);
 
   // Forms
   const createForm = useForm<CreateAccountFormData>({
@@ -198,17 +147,7 @@ export function AdminAccountsPage() {
   const archivedAccounts = accounts.filter((a) => !a.isActive).length;
 
   /* ── Create account ── */
-  const onCreateSubmit = (data: CreateAccountFormData) => {
-    // Validate no duplicate email
-    const duplicate = accounts.find(
-      (a) => a.email.toLowerCase() === data.email.toLowerCase(),
-    );
-    if (duplicate) {
-      toast.error('An account with this email already exists.');
-      return;
-    }
-
-    // Validate all fields
+  const onCreateSubmit = async (data: CreateAccountFormData) => {
     if (
       !data.firstName ||
       !data.lastName ||
@@ -222,25 +161,24 @@ export function AdminAccountsPage() {
       return;
     }
 
-    const newAccount: StaffAccount = {
-      id: crypto.randomUUID(),
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email,
-      employeeId: data.employeeId,
-      department: data.department,
-      role: data.role as 'staff' | 'manager',
-      isActive: true,
-      archivedAt: null,
-      createdAt: new Date().toISOString(),
-    };
-
-    setAccounts((prev) => [...prev, newAccount]);
-    setCreateOpen(false);
-    createForm.reset();
-    toast.success(
-      `Account created for ${newAccount.firstName} ${newAccount.lastName}.`,
-    );
+    try {
+      const newAccount = await adminAPI.createAccount({
+        email: data.email,
+        password: data.temporaryPassword,
+        role: data.role as 'staff' | 'manager',
+        firstName: data.firstName,
+        lastName: data.lastName,
+        employeeId: data.employeeId,
+        department: data.department,
+      });
+      setAccounts((prev) => [...prev, newAccount]);
+      setCreateOpen(false);
+      createForm.reset();
+      toast.success(`Account created for ${data.firstName} ${data.lastName}.`);
+    } catch (err: any) {
+      const message = err?.response?.data?.error || 'Failed to create account.';
+      toast.error(message);
+    }
   };
 
   /* ── Edit account ── */
@@ -253,29 +191,29 @@ export function AdminAccountsPage() {
     setEditOpen(true);
   };
 
-  const onEditSubmit = (data: EditAccountFormData) => {
+  const onEditSubmit = async (data: EditAccountFormData) => {
     if (!selectedAccount) return;
 
-    // Check duplicate email (excluding current account)
-    const duplicate = accounts.find(
-      (a) =>
-        a.id !== selectedAccount.id &&
-        a.email.toLowerCase() === data.email.toLowerCase(),
-    );
-    if (duplicate) {
-      toast.error('An account with this email already exists.');
-      return;
+    try {
+      await adminAPI.updateAccount(selectedAccount.userId, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        department: data.department,
+        email: data.email,
+      });
+      setAccounts((prev) =>
+        prev.map((a) =>
+          a.userId === selectedAccount.userId
+            ? { ...a, firstName: data.firstName, lastName: data.lastName, department: data.department, email: data.email }
+            : a,
+        ),
+      );
+      setEditOpen(false);
+      toast.success('Account updated successfully.');
+    } catch (err: any) {
+      const message = err?.response?.data?.error || 'Failed to update account.';
+      toast.error(message);
     }
-
-    setAccounts((prev) =>
-      prev.map((a) =>
-        a.id === selectedAccount.id
-          ? { ...a, firstName: data.firstName, lastName: data.lastName, department: data.department, email: data.email }
-          : a,
-      ),
-    );
-    setEditOpen(false);
-    toast.success('Account updated successfully.');
   };
 
   /* ── Archive account ── */
@@ -284,20 +222,26 @@ export function AdminAccountsPage() {
     setArchiveOpen(true);
   };
 
-  const onArchiveConfirm = () => {
+  const onArchiveConfirm = async () => {
     if (!selectedAccount) return;
 
-    setAccounts((prev) =>
-      prev.map((a) =>
-        a.id === selectedAccount.id
-          ? { ...a, isActive: false, archivedAt: new Date().toISOString() }
-          : a,
-      ),
-    );
-    setArchiveOpen(false);
-    toast.success(
-      `Account for ${selectedAccount.firstName} ${selectedAccount.lastName} has been archived.`,
-    );
+    try {
+      await adminAPI.archiveAccount(selectedAccount.userId);
+      setAccounts((prev) =>
+        prev.map((a) =>
+          a.userId === selectedAccount.userId
+            ? { ...a, isActive: false, archivedAt: new Date().toISOString() }
+            : a,
+        ),
+      );
+      setArchiveOpen(false);
+      toast.success(
+        `Account for ${selectedAccount.firstName} ${selectedAccount.lastName} has been archived.`,
+      );
+    } catch (err: any) {
+      const message = err?.response?.data?.error || 'Failed to archive account.';
+      toast.error(message);
+    }
   };
 
   return (
@@ -391,6 +335,9 @@ export function AdminAccountsPage() {
 
         {/* ── Accounts table ── */}
         <Card className="p-6 overflow-x-auto">
+          {loading ? (
+            <div className="text-center py-12 text-gray-500">Loading accounts...</div>
+          ) : (
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
@@ -430,7 +377,7 @@ export function AdminAccountsPage() {
               ) : (
                 filteredAccounts.map((account) => (
                   <tr
-                    key={account.id}
+                    key={account.userId}
                     className="border-b border-gray-100 hover:bg-gray-50"
                   >
                     <td className="py-3 px-4 text-sm">
@@ -486,6 +433,7 @@ export function AdminAccountsPage() {
               )}
             </tbody>
           </table>
+          )}
         </Card>
       </div>
 

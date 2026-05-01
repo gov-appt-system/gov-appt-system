@@ -30,7 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
-import { realServiceAPI, assignmentAPI, BackendService, BackendAssignment } from '../services/api';
+import { serviceAPI, assignmentAPI, BackendService, BackendAssignment } from '../services/api';
 import { toast } from 'sonner';
 
 export function StaffAssignmentPage() {
@@ -52,7 +52,7 @@ export function StaffAssignmentPage() {
     setLoadingServices(true);
     setError(null);
     try {
-      const data = await realServiceAPI.getAll();
+      const data = await serviceAPI.getAll();
       setServices(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load services');

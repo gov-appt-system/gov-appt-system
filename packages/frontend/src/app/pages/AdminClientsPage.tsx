@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   Edit,
@@ -40,24 +40,11 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { toast } from 'sonner';
+import { adminAPI, ClientAccount } from '../services/api';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
-
-interface ClientAccount {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  address: string;
-  dateOfBirth: string;
-  governmentId: string;
-  isActive: boolean;
-  archivedAt: string | null;
-  createdAt: string;
-}
 
 interface EditClientFormData {
   firstName: string;
@@ -67,70 +54,12 @@ interface EditClientFormData {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Initial mock data                                                  */
-/* ------------------------------------------------------------------ */
-
-const INITIAL_CLIENTS: ClientAccount[] = [
-  {
-    id: '1',
-    firstName: 'John',
-    lastName: 'Citizen',
-    email: 'client@gov.ph',
-    phoneNumber: '+63-912-345-6789',
-    address: 'Quezon City',
-    dateOfBirth: '1990-05-15',
-    governmentId: 'GOV-001',
-    isActive: true,
-    archivedAt: null,
-    createdAt: '2026-01-20T08:00:00',
-  },
-  {
-    id: '2',
-    firstName: 'Maria',
-    lastName: 'Santos',
-    email: 'maria.santos@email.com',
-    phoneNumber: '+63-917-123-4567',
-    address: 'Manila',
-    dateOfBirth: '1985-08-22',
-    governmentId: 'GOV-002',
-    isActive: true,
-    archivedAt: null,
-    createdAt: '2026-01-25T08:00:00',
-  },
-  {
-    id: '3',
-    firstName: 'Pedro',
-    lastName: 'Cruz',
-    email: 'pedro.cruz@email.com',
-    phoneNumber: '+63-918-765-4321',
-    address: 'Makati',
-    dateOfBirth: '1992-12-01',
-    governmentId: 'GOV-003',
-    isActive: true,
-    archivedAt: null,
-    createdAt: '2026-02-05T08:00:00',
-  },
-  {
-    id: '4',
-    firstName: 'Elena',
-    lastName: 'Reyes',
-    email: 'elena.reyes@email.com',
-    phoneNumber: '+63-919-111-2222',
-    address: 'Pasig',
-    dateOfBirth: '1988-03-10',
-    governmentId: 'GOV-004',
-    isActive: false,
-    archivedAt: '2026-03-01T10:00:00',
-    createdAt: '2026-01-18T08:00:00',
-  },
-];
-
-/* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
 export function AdminClientsPage() {
-  const [clients, setClients] = useState<ClientAccount[]>(INITIAL_CLIENTS);
+  const [clients, setClients] = useState<ClientAccount[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Dialog state
   const [viewOpen, setViewOpen] = useState(false);
@@ -141,6 +70,21 @@ export function AdminClientsPage() {
   // Filter / search state
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('all');
+
+  // Load clients from API
+  useEffect(() => {
+    const loadClients = async () => {
+      try {
+        const data = await adminAPI.getClients();
+        setClients(data);
+      } catch (err) {
+        toast.error('Failed to load clients');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadClients();
+  }, []);
 
   // Forms
   const editForm = useForm<EditClientFormData>({
@@ -155,13 +99,13 @@ export function AdminClientsPage() {
   /* ── Filtered clients ── */
   const filteredClients = useMemo(() => {
     return clients.filter((client) => {
-      const fullName = `${client.firstName} ${client.lastName}`.toLowerCase();
+      const fullName = `${client.firstName ?? ''} ${client.lastName ?? ''}`.toLowerCase();
       const query = searchQuery.toLowerCase();
       const matchesSearch =
         !searchQuery ||
         fullName.includes(query) ||
         client.email.toLowerCase().includes(query) ||
-        client.governmentId.toLowerCase().includes(query);
+        (client.governmentId ?? '').toLowerCase().includes(query);
 
       const matchesStatus =
         statusFilter === 'all' ||
@@ -186,31 +130,42 @@ export function AdminClientsPage() {
   /* ── Edit client ── */
   const handleEdit = (client: ClientAccount) => {
     setSelectedClient(client);
-    editForm.setValue('firstName', client.firstName);
-    editForm.setValue('lastName', client.lastName);
-    editForm.setValue('phoneNumber', client.phoneNumber);
-    editForm.setValue('address', client.address);
+    editForm.setValue('firstName', client.firstName ?? '');
+    editForm.setValue('lastName', client.lastName ?? '');
+    editForm.setValue('phoneNumber', client.phoneNumber ?? '');
+    editForm.setValue('address', client.address ?? '');
     setEditOpen(true);
   };
 
-  const onEditSubmit = (data: EditClientFormData) => {
+  const onEditSubmit = async (data: EditClientFormData) => {
     if (!selectedClient) return;
 
-    setClients((prev) =>
-      prev.map((c) =>
-        c.id === selectedClient.id
-          ? {
-              ...c,
-              firstName: data.firstName,
-              lastName: data.lastName,
-              phoneNumber: data.phoneNumber,
-              address: data.address,
-            }
-          : c,
-      ),
-    );
-    setEditOpen(false);
-    toast.success('Client information updated successfully.');
+    try {
+      await adminAPI.updateClient(selectedClient.userId, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phoneNumber: data.phoneNumber,
+        address: data.address,
+      });
+      setClients((prev) =>
+        prev.map((c) =>
+          c.userId === selectedClient.userId
+            ? {
+                ...c,
+                firstName: data.firstName,
+                lastName: data.lastName,
+                phoneNumber: data.phoneNumber,
+                address: data.address,
+              }
+            : c,
+        ),
+      );
+      setEditOpen(false);
+      toast.success('Client information updated successfully.');
+    } catch (err: any) {
+      const message = err?.response?.data?.error || 'Failed to update client.';
+      toast.error(message);
+    }
   };
 
   /* ── Archive client ── */
@@ -219,20 +174,26 @@ export function AdminClientsPage() {
     setArchiveOpen(true);
   };
 
-  const onArchiveConfirm = () => {
+  const onArchiveConfirm = async () => {
     if (!selectedClient) return;
 
-    setClients((prev) =>
-      prev.map((c) =>
-        c.id === selectedClient.id
-          ? { ...c, isActive: false, archivedAt: new Date().toISOString() }
-          : c,
-      ),
-    );
-    setArchiveOpen(false);
-    toast.success(
-      `Client account for ${selectedClient.firstName} ${selectedClient.lastName} has been archived.`,
-    );
+    try {
+      await adminAPI.updateClient(selectedClient.userId, { isActive: false });
+      setClients((prev) =>
+        prev.map((c) =>
+          c.userId === selectedClient.userId
+            ? { ...c, isActive: false, archivedAt: new Date().toISOString() }
+            : c,
+        ),
+      );
+      setArchiveOpen(false);
+      toast.success(
+        `Client account for ${selectedClient.firstName} ${selectedClient.lastName} has been archived.`,
+      );
+    } catch (err: any) {
+      const message = err?.response?.data?.error || 'Failed to archive client.';
+      toast.error(message);
+    }
   };
 
   /* ── Format date helper ── */
@@ -316,6 +277,9 @@ export function AdminClientsPage() {
 
         {/* ── Clients table ── */}
         <Card className="p-6 overflow-x-auto">
+          {loading ? (
+            <div className="text-center py-12 text-gray-500">Loading clients...</div>
+          ) : (
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
@@ -355,7 +319,7 @@ export function AdminClientsPage() {
               ) : (
                 filteredClients.map((client) => (
                   <tr
-                    key={client.id}
+                    key={client.userId}
                     className="border-b border-gray-100 hover:bg-gray-50"
                   >
                     <td className="py-3 px-4 text-sm">
@@ -367,7 +331,7 @@ export function AdminClientsPage() {
                       {client.governmentId}
                     </td>
                     <td className="py-3 px-4 text-sm">
-                      {formatDate(client.dateOfBirth)}
+                      {client.dateOfBirth ? formatDate(client.dateOfBirth) : '—'}
                     </td>
                     <td className="py-3 px-4">
                       <span
@@ -415,6 +379,7 @@ export function AdminClientsPage() {
               )}
             </tbody>
           </table>
+          )}
         </Card>
       </div>
 
@@ -468,7 +433,7 @@ export function AdminClientsPage() {
                 <div>
                   <Label className="text-gray-500 text-xs">Date of Birth</Label>
                   <p className="text-sm font-medium">
-                    {formatDate(selectedClient.dateOfBirth)}
+                    {selectedClient.dateOfBirth ? formatDate(selectedClient.dateOfBirth) : '—'}
                   </p>
                 </div>
                 <div>

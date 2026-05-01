@@ -32,7 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
-import { realAppointmentAPI, realServiceAPI, BackendAppointment, BackendService } from '../services/api';
+import { appointmentAPI, serviceAPI, BackendAppointment, BackendService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 
@@ -61,8 +61,8 @@ export function ProcessRequestsPage() {
     setError(null);
     try {
       const [appts, svcs] = await Promise.all([
-        realAppointmentAPI.getAll(),
-        realServiceAPI.getAll(),
+        appointmentAPI.getAll(),
+        serviceAPI.getAll(),
       ]);
       setAppointments(appts);
       setServices(svcs);
@@ -122,7 +122,7 @@ export function ProcessRequestsPage() {
     setActionLoading(true);
     try {
       const newStatus = statusMap[actionType];
-      const updated = await realAppointmentAPI.update(appointmentToAction, { status: newStatus });
+      const updated = await appointmentAPI.update(appointmentToAction, { status: newStatus });
       setAppointments(prev => prev.map(a => a.id === appointmentToAction ? updated : a));
       toast.success(`Appointment ${newStatus} successfully!`);
     } catch (err: unknown) {
@@ -149,7 +149,7 @@ export function ProcessRequestsPage() {
     if (!remarksAppointment) return;
     setSavingRemarks(true);
     try {
-      const updated = await realAppointmentAPI.update(remarksAppointment.id, { remarks: remarksText });
+      const updated = await appointmentAPI.update(remarksAppointment.id, { remarks: remarksText });
       setAppointments(prev => prev.map(a => a.id === remarksAppointment.id ? updated : a));
       toast.success('Remarks saved successfully!');
       setRemarksAppointment(null);

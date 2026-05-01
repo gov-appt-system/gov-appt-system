@@ -1,9 +1,8 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
-// API Base Configuration
+// ── API Base Configuration ──────────────────────────────────
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
-// Create axios instance with default config
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -12,7 +11,7 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor — attach JWT token
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
@@ -21,25 +20,24 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error),
 );
 
-// Response interceptor for error handling
+// Response interceptor — handle 401 globally
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized access
       localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);
-  }
+  },
 );
 
-// Type definitions
+// ── Type Definitions ────────────────────────────────────────
+
 export interface User {
   id: string;
   name: string;
@@ -57,7 +55,17 @@ export interface LoginResponse {
   token: string;
 }
 
-// Backend appointment model (camelCase from API)
+export interface RegisterData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  dateOfBirth: string;
+  governmentId: string;
+  password: string;
+}
+
 export interface BackendAppointment {
   id: string;
   trackingNumber: string;
@@ -83,7 +91,6 @@ export interface BackendAppointment {
   updatedAt: string;
 }
 
-// Backend service model (camelCase from API)
 export interface BackendService {
   id: string;
   name: string;
@@ -104,7 +111,6 @@ export interface BackendService {
   createdBy: string;
 }
 
-// Backend assignment model (camelCase from API)
 export interface BackendAssignment {
   id: string;
   staffId: string;
@@ -123,118 +129,135 @@ export interface BackendAssignment {
   } | null;
 }
 
-// Legacy types kept for backward compatibility with other pages
-export interface Service {
-  id: string;
-  name: string;
-  description: string;
-  department: string;
-  businessHours: string;
-  requiresDocuments: boolean;
-}
-
-export interface Appointment {
-  id: string;
-  trackingNumber: string;
-  service: string;
-  serviceId: string;
-  date: string;
-  time: string;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  clientName: string;
-  clientEmail: string;
-  clientPhone: string;
-  notes?: string;
-  createdAt: string;
-}
-
-export interface AppointmentFormData {
-  serviceId: string;
-  date: string;
-  time: string;
-  fullName: string;
+export interface StaffAccount {
+  userId: string;
   email: string;
-  phone: string;
-  address?: string;
-  notes?: string;
-  documents?: File[];
-}
-
-export interface RegisterData {
+  role: 'staff' | 'manager';
+  isActive: boolean;
+  archivedAt: string | null;
   firstName: string;
   lastName: string;
-  email: string;
-  phone: string;
-  address: string;
-  dateOfBirth: string;
-  governmentId: string;
-  password: string;
+  employeeId: string;
+  department: string;
+  assignedServices: string[];
 }
 
-// Mock data for demo purposes (simulating API responses)
-const MOCK_USERS: Array<User & { password: string }> = [
-  { id: '1', name: 'John Citizen', email: 'client@gov.ph', password: 'client123', role: 'client' },
-  { id: '2', name: 'Maria Staff', email: 'staff@gov.ph', password: 'staff123', role: 'staff' },
-  { id: '3', name: 'Carlos Manager', email: 'manager@gov.ph', password: 'manager123', role: 'manager' },
-  { id: '4', name: 'Admin User', email: 'admin@gov.ph', password: 'admin123', role: 'admin' },
-];
+export interface ClientAccount {
+  userId: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  firstName: string | null;
+  lastName: string | null;
+  phoneNumber: string | null;
+  address: string | null;
+  dateOfBirth: string | null;
+  governmentId: string | null;
+}
 
-// ── Auth API (mock — kept as-is for login) ──────────────────
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  userId: string | null;
+  userName: string | null;
+  userEmail: string | null;
+  action: string;
+  resource: string;
+  details: Record<string, unknown>;
+  ipAddress: string | null;
+}
+
+export interface ProfileResponse {
+  user: {
+    id: string;
+    email: string;
+    role: string;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+  };
+  profile: Record<string, unknown> | null;
+}
+
+// ── Auth API ────────────────────────────────────────────────
+
 export const authAPI = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const user = MOCK_USERS.find(
-      u => u.email === credentials.email && u.password === credentials.password
+    const { data } = await apiClient.post<{ user: { id: string; email: string; role: string }; token: string }>(
+      '/auth/login',
+      credentials,
     );
 
-    if (!user) {
-      throw new Error('Invalid credentials');
+    const user: User = {
+      id: data.user.id,
+      email: data.user.email,
+      role: data.user.role as User['role'],
+      name: data.user.email, // Will be updated after profile fetch
+    };
+
+    localStorage.setItem('authToken', data.token);
+    localStorage.setItem('user', JSON.stringify(user));
+
+    // Fetch full profile to get the real name
+    try {
+      const profileRes = await apiClient.get<ProfileResponse>('/profile');
+      const profile = profileRes.data.profile;
+      if (profile) {
+        const firstName = (profile.first_name as string) || '';
+        const lastName = (profile.last_name as string) || '';
+        user.name = `${firstName} ${lastName}`.trim() || user.email;
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+    } catch {
+      // Profile fetch is best-effort; login still succeeds
     }
 
-    const { password, ...userWithoutPassword } = user;
-    const token = `mock-token-${user.id}`;
-
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('user', JSON.stringify(userWithoutPassword));
-
-    return {
-      user: userWithoutPassword,
-      token,
-    };
+    return { user, token: data.token };
   },
 
   logout: async (): Promise<void> => {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
+    try {
+      await apiClient.post('/auth/logout');
+    } finally {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+    }
   },
 
   register: async (data: RegisterData): Promise<{ user: User }> => {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    const existing = MOCK_USERS.find(u => u.email === data.email);
-    if (existing) {
-      throw new Error('An account with this email already exists.');
-    }
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
+    const { data: result } = await apiClient.post<{ id: string; email: string; role: string }>(
+      '/auth/register',
+      {
+        email: data.email,
+        password: data.password,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phoneNumber: data.phone,
+        address: data.address,
+        dateOfBirth: data.dateOfBirth,
+        governmentId: data.governmentId,
+      },
+    );
+
+    const user: User = {
+      id: result.id,
+      email: result.email,
+      role: result.role as User['role'],
       name: `${data.firstName} ${data.lastName}`,
-      email: data.email,
-      role: 'client',
     };
-    MOCK_USERS.push({ ...newUser, password: data.password });
-    return { user: newUser };
+
+    return { user };
   },
 
   forgotPassword: async (email: string): Promise<void> => {
-    await new Promise(resolve => setTimeout(resolve, 600));
-    console.log(`[mock] Password reset email sent to ${email}`);
+    await apiClient.post('/auth/forgot-password', { email });
   },
 
   resetPassword: async (token: string, newPassword: string): Promise<void> => {
-    await new Promise(resolve => setTimeout(resolve, 600));
-    if (!token) throw new Error('Invalid or expired reset token.');
-    console.log(`[mock] Password reset with token ${token}, new password length: ${newPassword.length}`);
+    await apiClient.post('/auth/reset-password', { token, newPassword });
   },
 
   getCurrentUser: (): User | null => {
@@ -243,8 +266,9 @@ export const authAPI = {
   },
 };
 
-// ── Appointment API (real backend calls) ────────────────────
-export const realAppointmentAPI = {
+// ── Appointment API ─────────────────────────────────────────
+
+export const appointmentAPI = {
   /** GET /api/appointments — list appointments (role-filtered by backend) */
   getAll: async (params?: { status?: string; serviceId?: string; search?: string }): Promise<BackendAppointment[]> => {
     const { data } = await apiClient.get<BackendAppointment[]>('/appointments', { params });
@@ -257,6 +281,24 @@ export const realAppointmentAPI = {
     return data;
   },
 
+  /** POST /api/appointments — create a new appointment */
+  create: async (payload: {
+    serviceId: string;
+    dateTime: string;
+    personalDetails: {
+      firstName: string;
+      lastName: string;
+      phoneNumber: string;
+      email: string;
+      address: string;
+    };
+    requiredDocuments?: string[];
+    remarks?: string;
+  }): Promise<BackendAppointment> => {
+    const { data } = await apiClient.post<BackendAppointment>('/appointments', payload);
+    return data;
+  },
+
   /** PUT /api/appointments/:id — update status / remarks (staff/manager) */
   update: async (id: string, payload: { status?: string; remarks?: string }): Promise<BackendAppointment> => {
     const { data } = await apiClient.put<BackendAppointment>(`/appointments/${id}`, payload);
@@ -264,8 +306,9 @@ export const realAppointmentAPI = {
   },
 };
 
-// ── Service API (real backend calls) ────────────────────────
-export const realServiceAPI = {
+// ── Service API ─────────────────────────────────────────────
+
+export const serviceAPI = {
   /** GET /api/services — list active services */
   getAll: async (): Promise<BackendService[]> => {
     const { data } = await apiClient.get<BackendService[]>('/services');
@@ -317,7 +360,8 @@ export const realServiceAPI = {
   },
 };
 
-// ── Assignment API (real backend calls) ─────────────────────
+// ── Assignment API ──────────────────────────────────────────
+
 export const assignmentAPI = {
   /** GET /api/services/:serviceId/assignments */
   getByService: async (serviceId: string): Promise<BackendAssignment[]> => {
@@ -338,81 +382,111 @@ export const assignmentAPI = {
   },
 };
 
-// ── Legacy mock APIs (kept for pages not yet migrated) ──────
-export const appointmentAPI = {
-  create: async (data: AppointmentFormData): Promise<Appointment> => {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    const trackingNumber = `APT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const appointment: Appointment = {
-      id: Math.random().toString(36).substr(2, 9),
-      trackingNumber,
-      service: data.serviceId,
-      serviceId: data.serviceId,
-      date: data.date,
-      time: data.time,
-      status: 'pending',
-      clientName: data.fullName,
-      clientEmail: data.email,
-      clientPhone: data.phone,
-      notes: data.notes,
-      createdAt: new Date().toISOString(),
-    };
-    const appointments = JSON.parse(localStorage.getItem('appointments') || '[]');
-    appointments.push(appointment);
-    localStorage.setItem('appointments', JSON.stringify(appointments));
-    return appointment;
+// ── Admin API ───────────────────────────────────────────────
+
+export const adminAPI = {
+  /** GET /api/admin/accounts — list staff/manager accounts */
+  getAccounts: async (): Promise<StaffAccount[]> => {
+    const { data } = await apiClient.get<StaffAccount[]>('/admin/accounts');
+    return data;
   },
 
-  getAll: async (): Promise<Appointment[]> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return JSON.parse(localStorage.getItem('appointments') || '[]');
+  /** POST /api/admin/accounts — create staff/manager account */
+  createAccount: async (payload: {
+    email: string;
+    password: string;
+    role: 'staff' | 'manager';
+    firstName: string;
+    lastName: string;
+    employeeId: string;
+    department: string;
+  }): Promise<StaffAccount> => {
+    const { data } = await apiClient.post<StaffAccount>('/admin/accounts', payload);
+    return data;
   },
 
-  getByTrackingNumber: async (trackingNumber: string): Promise<Appointment | null> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const appointments = JSON.parse(localStorage.getItem('appointments') || '[]');
-    return appointments.find((a: Appointment) => a.trackingNumber === trackingNumber) || null;
+  /** PUT /api/admin/accounts/:id — update staff/manager account */
+  updateAccount: async (id: string, payload: Partial<{
+    email: string;
+    role: 'staff' | 'manager';
+    firstName: string;
+    lastName: string;
+    employeeId: string;
+    department: string;
+  }>): Promise<{ message: string }> => {
+    const { data } = await apiClient.put<{ message: string }>(`/admin/accounts/${id}`, payload);
+    return data;
   },
 
-  updateStatus: async (id: string, status: Appointment['status']): Promise<Appointment> => {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    const appointments = JSON.parse(localStorage.getItem('appointments') || '[]');
-    const index = appointments.findIndex((a: Appointment) => a.id === id);
-    if (index === -1) throw new Error('Appointment not found');
-    appointments[index].status = status;
-    localStorage.setItem('appointments', JSON.stringify(appointments));
-    return appointments[index];
+  /** DELETE /api/admin/accounts/:id — archive staff/manager account */
+  archiveAccount: async (id: string): Promise<{ message: string }> => {
+    const { data } = await apiClient.delete<{ message: string }>(`/admin/accounts/${id}`);
+    return data;
   },
 
-  getById: async (id: string): Promise<Appointment | null> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const appointments: Appointment[] = JSON.parse(localStorage.getItem('appointments') || '[]');
-    return appointments.find((a: Appointment) => a.id === id) || null;
+  /** GET /api/admin/clients — list client accounts */
+  getClients: async (): Promise<ClientAccount[]> => {
+    const { data } = await apiClient.get<ClientAccount[]>('/admin/clients');
+    return data;
   },
 
-  delete: async (id: string): Promise<void> => {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    const appointments = JSON.parse(localStorage.getItem('appointments') || '[]');
-    const filtered = appointments.filter((a: Appointment) => a.id !== id);
-    localStorage.setItem('appointments', JSON.stringify(filtered));
+  /** PUT /api/admin/clients/:id — update client account */
+  updateClient: async (id: string, payload: Partial<{
+    email: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    address: string;
+    isActive: boolean;
+  }>): Promise<{ message: string }> => {
+    const { data } = await apiClient.put<{ message: string }>(`/admin/clients/${id}`, payload);
+    return data;
+  },
+
+  /** GET /api/admin/audit-logs — fetch audit logs */
+  getAuditLogs: async (params?: {
+    userId?: string;
+    action?: string;
+    resource?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<AuditLogEntry[]> => {
+    const { data } = await apiClient.get<AuditLogEntry[]>('/admin/audit-logs', { params });
+    return data;
+  },
+
+  /** GET /api/admin/audit-logs/export — export audit logs as CSV */
+  exportAuditLogs: async (startDate: string, endDate: string): Promise<string> => {
+    const { data } = await apiClient.get<string>('/admin/audit-logs/export', {
+      params: { startDate, endDate },
+      responseType: 'text' as any,
+    });
+    return data;
   },
 };
 
-export const serviceAPI = {
-  getAll: async (): Promise<Service[]> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return [
-      { id: 'birth-cert', name: 'Birth Certificate', description: 'Request for civil registry document - Birth Certificate', department: 'Civil Registry', businessHours: 'Mon-Fri, 8:00 AM - 5:00 PM', requiresDocuments: true },
-      { id: 'marriage-cert', name: 'Marriage Certificate', description: 'Request for civil registry document - Marriage Certificate', department: 'Civil Registry', businessHours: 'Mon-Fri, 8:00 AM - 5:00 PM', requiresDocuments: true },
-      { id: 'business-permit', name: 'Business Permit', description: 'Application for new or renewal of business permit', department: 'Business Affairs', businessHours: 'Mon-Fri, 9:00 AM - 4:00 PM', requiresDocuments: true },
-      { id: 'barangay-clearance', name: 'Barangay Clearance', description: 'Certificate of residency from barangay office', department: 'Barangay Affairs', businessHours: 'Mon-Fri, 8:00 AM - 5:00 PM', requiresDocuments: false },
-      { id: 'cedula', name: 'Community Tax Certificate (Cedula)', description: 'Individual or corporate community tax certificate', department: 'Treasury', businessHours: 'Mon-Fri, 8:00 AM - 5:00 PM', requiresDocuments: false },
-    ];
+// ── Profile API ─────────────────────────────────────────────
+
+export const profileAPI = {
+  /** GET /api/profile — fetch current user's profile */
+  get: async (): Promise<ProfileResponse> => {
+    const { data } = await apiClient.get<ProfileResponse>('/profile');
+    return data;
   },
 
-  getById: async (id: string): Promise<Service | null> => {
-    const services = await serviceAPI.getAll();
-    return services.find(s => s.id === id) || null;
+  /** PUT /api/profile — update current user's profile */
+  update: async (payload: Record<string, unknown>): Promise<{ message: string }> => {
+    const { data } = await apiClient.put<{ message: string }>('/profile', payload);
+    return data;
+  },
+
+  /** POST /api/profile/change-password — change password */
+  changePassword: async (currentPassword: string, newPassword: string): Promise<{ message: string }> => {
+    const { data } = await apiClient.post<{ message: string }>('/profile/change-password', {
+      currentPassword,
+      newPassword,
+    });
+    return data;
   },
 };
 

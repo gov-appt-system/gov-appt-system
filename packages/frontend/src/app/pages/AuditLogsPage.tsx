@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   FileText,
   Download,
@@ -24,315 +24,7 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { toast } from 'sonner';
-
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
-
-interface AuditLogEntry {
-  id: string;
-  timestamp: string;
-  userId: string | null;
-  userName: string | null;
-  userEmail: string | null;
-  action: string;
-  resource: string;
-  details: Record<string, unknown>;
-  ipAddress: string | null;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Mock data helpers                                                  */
-/* ------------------------------------------------------------------ */
-
-function daysAgo(days: number, hours: number, minutes: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  d.setHours(hours, minutes, 0, 0);
-  return d.toISOString();
-}
-
-/* ------------------------------------------------------------------ */
-/*  Initial mock audit log entries (~25 entries, last 7 days)          */
-/* ------------------------------------------------------------------ */
-
-const INITIAL_LOGS: AuditLogEntry[] = [
-  {
-    id: 'log-001',
-    timestamp: daysAgo(0, 9, 15),
-    userId: 'usr-admin-1',
-    userName: 'Admin User',
-    userEmail: 'admin@gov.ph',
-    action: 'Login',
-    resource: 'Auth',
-    details: { method: 'email_password' },
-    ipAddress: '192.168.1.10',
-  },
-  {
-    id: 'log-002',
-    timestamp: daysAgo(0, 9, 45),
-    userId: 'usr-admin-1',
-    userName: 'Admin User',
-    userEmail: 'admin@gov.ph',
-    action: 'Create',
-    resource: 'User Account',
-    details: { targetRole: 'staff', targetEmail: 'new.staff@gov.ph' },
-    ipAddress: '192.168.1.10',
-  },
-  {
-    id: 'log-003',
-    timestamp: daysAgo(0, 10, 30),
-    userId: 'usr-staff-1',
-    userName: 'Maria Staff',
-    userEmail: 'staff@gov.ph',
-    action: 'Login',
-    resource: 'Auth',
-    details: { method: 'email_password' },
-    ipAddress: '192.168.1.20',
-  },
-  {
-    id: 'log-004',
-    timestamp: daysAgo(0, 11, 0),
-    userId: 'usr-staff-1',
-    userName: 'Maria Staff',
-    userEmail: 'staff@gov.ph',
-    action: 'Update',
-    resource: 'Appointment',
-    details: { appointmentId: 'apt-101', oldStatus: 'pending', newStatus: 'confirmed' },
-    ipAddress: '192.168.1.20',
-  },
-  {
-    id: 'log-005',
-    timestamp: daysAgo(0, 14, 20),
-    userId: 'usr-staff-1',
-    userName: 'Maria Staff',
-    userEmail: 'staff@gov.ph',
-    action: 'Logout',
-    resource: 'Auth',
-    details: {},
-    ipAddress: '192.168.1.20',
-  },
-  {
-    id: 'log-006',
-    timestamp: daysAgo(1, 8, 0),
-    userId: null,
-    userName: null,
-    userEmail: null,
-    action: 'System Event',
-    resource: 'Auth',
-    details: { event: 'session_cleanup', expiredSessions: 12 },
-    ipAddress: null,
-  },
-  {
-    id: 'log-007',
-    timestamp: daysAgo(1, 9, 10),
-    userId: 'usr-manager-1',
-    userName: 'Carlos Manager',
-    userEmail: 'manager@gov.ph',
-    action: 'Login',
-    resource: 'Auth',
-    details: { method: 'email_password' },
-    ipAddress: '192.168.1.30',
-  },
-  {
-    id: 'log-008',
-    timestamp: daysAgo(1, 10, 0),
-    userId: 'usr-manager-1',
-    userName: 'Carlos Manager',
-    userEmail: 'manager@gov.ph',
-    action: 'Create',
-    resource: 'Service',
-    details: { serviceName: 'Birth Certificate', department: 'Civil Registry' },
-    ipAddress: '192.168.1.30',
-  },
-  {
-    id: 'log-009',
-    timestamp: daysAgo(1, 10, 45),
-    userId: 'usr-manager-1',
-    userName: 'Carlos Manager',
-    userEmail: 'manager@gov.ph',
-    action: 'Update',
-    resource: 'Service',
-    details: { serviceName: 'Birth Certificate', field: 'capacity', oldValue: 5, newValue: 10 },
-    ipAddress: '192.168.1.30',
-  },
-  {
-    id: 'log-010',
-    timestamp: daysAgo(1, 11, 30),
-    userId: 'usr-manager-1',
-    userName: 'Carlos Manager',
-    userEmail: 'manager@gov.ph',
-    action: 'Create',
-    resource: 'Staff Assignment',
-    details: { staffEmail: 'staff@gov.ph', serviceName: 'Birth Certificate' },
-    ipAddress: '192.168.1.30',
-  },
-  {
-    id: 'log-011',
-    timestamp: daysAgo(2, 8, 30),
-    userId: 'usr-admin-1',
-    userName: 'Admin User',
-    userEmail: 'admin@gov.ph',
-    action: 'Login',
-    resource: 'Auth',
-    details: { method: 'email_password' },
-    ipAddress: '10.0.0.5',
-  },
-  {
-    id: 'log-012',
-    timestamp: daysAgo(2, 9, 0),
-    userId: 'usr-admin-1',
-    userName: 'Admin User',
-    userEmail: 'admin@gov.ph',
-    action: 'Archive',
-    resource: 'User Account',
-    details: { targetEmail: 'old.staff@gov.ph', reason: 'resigned' },
-    ipAddress: '10.0.0.5',
-  },
-  {
-    id: 'log-013',
-    timestamp: daysAgo(2, 13, 15),
-    userId: 'usr-staff-2',
-    userName: 'Ana Processor',
-    userEmail: 'ana@gov.ph',
-    action: 'Login',
-    resource: 'Auth',
-    details: { method: 'email_password' },
-    ipAddress: '192.168.1.40',
-  },
-  {
-    id: 'log-014',
-    timestamp: daysAgo(2, 14, 0),
-    userId: 'usr-staff-2',
-    userName: 'Ana Processor',
-    userEmail: 'ana@gov.ph',
-    action: 'Update',
-    resource: 'Appointment',
-    details: { appointmentId: 'apt-102', oldStatus: 'confirmed', newStatus: 'completed' },
-    ipAddress: '192.168.1.40',
-  },
-  {
-    id: 'log-015',
-    timestamp: daysAgo(3, 7, 45),
-    userId: null,
-    userName: null,
-    userEmail: null,
-    action: 'System Event',
-    resource: 'Auth',
-    details: { event: 'failed_login_threshold', email: 'unknown@test.com', attempts: 5 },
-    ipAddress: '203.0.113.50',
-  },
-  {
-    id: 'log-016',
-    timestamp: daysAgo(3, 10, 0),
-    userId: 'usr-admin-1',
-    userName: 'Admin User',
-    userEmail: 'admin@gov.ph',
-    action: 'Create',
-    resource: 'User Account',
-    details: { targetRole: 'manager', targetEmail: 'new.manager@gov.ph' },
-    ipAddress: '192.168.1.10',
-  },
-  {
-    id: 'log-017',
-    timestamp: daysAgo(3, 15, 30),
-    userId: 'usr-manager-1',
-    userName: 'Carlos Manager',
-    userEmail: 'manager@gov.ph',
-    action: 'Archive',
-    resource: 'Service',
-    details: { serviceName: 'Old Service', reason: 'discontinued' },
-    ipAddress: '192.168.1.30',
-  },
-  {
-    id: 'log-018',
-    timestamp: daysAgo(4, 9, 0),
-    userId: 'usr-staff-1',
-    userName: 'Maria Staff',
-    userEmail: 'staff@gov.ph',
-    action: 'Password Change',
-    resource: 'Profile',
-    details: { initiatedBy: 'self' },
-    ipAddress: '192.168.1.20',
-  },
-  {
-    id: 'log-019',
-    timestamp: daysAgo(4, 11, 20),
-    userId: 'usr-staff-2',
-    userName: 'Ana Processor',
-    userEmail: 'ana@gov.ph',
-    action: 'Update',
-    resource: 'Appointment',
-    details: { appointmentId: 'apt-103', field: 'remarks', value: 'Documents verified' },
-    ipAddress: '192.168.1.40',
-  },
-  {
-    id: 'log-020',
-    timestamp: daysAgo(5, 8, 15),
-    userId: 'usr-manager-1',
-    userName: 'Carlos Manager',
-    userEmail: 'manager@gov.ph',
-    action: 'Create',
-    resource: 'Service',
-    details: { serviceName: 'Business Permit', department: 'Business Affairs' },
-    ipAddress: '192.168.1.30',
-  },
-  {
-    id: 'log-021',
-    timestamp: daysAgo(5, 12, 0),
-    userId: 'usr-admin-1',
-    userName: 'Admin User',
-    userEmail: 'admin@gov.ph',
-    action: 'Password Change',
-    resource: 'Profile',
-    details: { initiatedBy: 'self' },
-    ipAddress: '10.0.0.5',
-  },
-  {
-    id: 'log-022',
-    timestamp: daysAgo(5, 16, 45),
-    userId: 'usr-manager-1',
-    userName: 'Carlos Manager',
-    userEmail: 'manager@gov.ph',
-    action: 'Archive',
-    resource: 'Staff Assignment',
-    details: { staffEmail: 'old.staff@gov.ph', serviceName: 'Birth Certificate' },
-    ipAddress: '192.168.1.30',
-  },
-  {
-    id: 'log-023',
-    timestamp: daysAgo(6, 9, 30),
-    userId: null,
-    userName: null,
-    userEmail: null,
-    action: 'System Event',
-    resource: 'Auth',
-    details: { event: 'password_reset_requested', email: 'staff@gov.ph' },
-    ipAddress: null,
-  },
-  {
-    id: 'log-024',
-    timestamp: daysAgo(6, 14, 10),
-    userId: 'usr-staff-1',
-    userName: 'Maria Staff',
-    userEmail: 'staff@gov.ph',
-    action: 'Login',
-    resource: 'Auth',
-    details: { method: 'email_password' },
-    ipAddress: '192.168.1.20',
-  },
-  {
-    id: 'log-025',
-    timestamp: daysAgo(6, 17, 0),
-    userId: 'usr-admin-1',
-    userName: 'Admin User',
-    userEmail: 'admin@gov.ph',
-    action: 'Logout',
-    resource: 'Auth',
-    details: {},
-    ipAddress: '10.0.0.5',
-  },
-];
+import { adminAPI, AuditLogEntry } from '../services/api';
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -366,7 +58,8 @@ const RESOURCE_OPTIONS = [
 /* ------------------------------------------------------------------ */
 
 export function AuditLogsPage() {
-  const [logs] = useState<AuditLogEntry[]>(INITIAL_LOGS);
+  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
+  const [, setLoading] = useState(true);
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -377,6 +70,21 @@ export function AuditLogsPage() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Load audit logs from API
+  useEffect(() => {
+    const loadLogs = async () => {
+      try {
+        const data = await adminAPI.getAuditLogs();
+        setLogs(data);
+      } catch (err) {
+        toast.error('Failed to load audit logs');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadLogs();
+  }, []);
 
   /* ── Filtered logs ── */
   const filteredLogs = useMemo(() => {

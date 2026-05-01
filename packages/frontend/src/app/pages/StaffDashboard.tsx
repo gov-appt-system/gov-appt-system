@@ -13,7 +13,7 @@ import {
   TableHead,
   TableCell,
 } from '../components/ui/table';
-import { realAppointmentAPI, realServiceAPI, BackendAppointment, BackendService } from '../services/api';
+import { appointmentAPI, serviceAPI, BackendAppointment, BackendService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 export function StaffDashboard() {
@@ -29,8 +29,8 @@ export function StaffDashboard() {
       setError(null);
       try {
         const [appts, svcs] = await Promise.all([
-          realAppointmentAPI.getAll(),
-          realServiceAPI.getAll(),
+          appointmentAPI.getAll(),
+          serviceAPI.getAll(),
         ]);
         setAppointments(appts);
         setServices(svcs);

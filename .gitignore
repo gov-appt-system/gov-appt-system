@@ -2,9 +2,7 @@
 .env
 .env.local
 .env.*.local
-text.ttxt
-
-.kiro/
+.env.example
 
 # Dependencies
 node_modules/
@@ -32,3 +30,4 @@ coverage/
 
 # Agent memory Bank
 .amazonq/*
+.kiro/*
