@@ -11,9 +11,26 @@ import { logger } from './config/logger';
 const app: Express = express();
 const PORT = process.env.PORT ?? 3000;
 
-// CORS middleware
+// CORS middleware — supports multiple origins for Vercel preview deployments
+const allowedOrigins = (process.env.FRONTEND_URL ?? 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim());
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, health checks)
+    if (!origin) return callback(null, true);
+
+    // Exact match against allowed origins
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    // Allow any Vercel preview URL for this project
+    if (/^https:\/\/gov-appt-system-frontend.*\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
   credentials: true,
 }));
 
