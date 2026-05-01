@@ -13,27 +13,44 @@ import {
   TableHead,
   TableCell,
 } from '../components/ui/table';
-import { appointmentAPI, serviceAPI, BackendAppointment, BackendService } from '../services/api';
+import { appointmentAPI, serviceAPI, adminAPI, BackendAppointment, BackendService, StaffAccount, ClientAccount } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 export function StaffDashboard() {
   const { user } = useAuth();
   const [appointments, setAppointments] = useState<BackendAppointment[]>([]);
   const [services, setServices] = useState<BackendService[]>([]);
+  const [staffAccounts, setStaffAccounts] = useState<StaffAccount[]>([]);
+  const [clientAccounts, setClientAccounts] = useState<ClientAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       setError(null);
       try {
-        const [appts, svcs] = await Promise.all([
-          appointmentAPI.getAll(),
-          serviceAPI.getAll(),
-        ]);
-        setAppointments(appts);
-        setServices(svcs);
+        if (isAdmin) {
+          // Admin: fetch accounts and services (no appointment access)
+          const [staff, clients, svcs] = await Promise.all([
+            adminAPI.getAccounts(),
+            adminAPI.getClients(),
+            serviceAPI.getAll().catch(() => [] as BackendService[]),
+          ]);
+          setStaffAccounts(staff);
+          setClientAccounts(clients);
+          setServices(svcs);
+        } else {
+          // Staff/Manager: fetch appointments and services
+          const [appts, svcs] = await Promise.all([
+            appointmentAPI.getAll(),
+            serviceAPI.getAll(),
+          ]);
+          setAppointments(appts);
+          setServices(svcs);
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to load data';
         setError(message);
@@ -42,7 +59,7 @@ export function StaffDashboard() {
       }
     }
     fetchData();
-  }, []);
+  }, [isAdmin]);
 
   // Build a serviceId → name lookup
   const serviceNameMap = useMemo(() => {
@@ -55,12 +72,21 @@ export function StaffDashboard() {
 
   const todayStr = new Date().toISOString().slice(0, 10);
 
-  const stats = useMemo(() => ({
+  // Stats for staff/manager
+  const appointmentStats = useMemo(() => ({
     today: appointments.filter(a => a.dateTime?.slice(0, 10) === todayStr).length,
     pending: appointments.filter(a => a.status === 'pending').length,
     confirmed: appointments.filter(a => a.status === 'confirmed').length,
     completed: appointments.filter(a => a.status === 'completed').length,
   }), [appointments, todayStr]);
+
+  // Stats for admin
+  const adminStats = useMemo(() => ({
+    totalStaff: staffAccounts.filter(a => a.role === 'staff').length,
+    totalManagers: staffAccounts.filter(a => a.role === 'manager').length,
+    totalClients: clientAccounts.length,
+    activeServices: services.length,
+  }), [staffAccounts, clientAccounts, services]);
 
   const getDashboardTitle = () => {
     switch (user?.role) {
@@ -119,28 +145,87 @@ export function StaffDashboard() {
         </div>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            { title: "Today's Appointments", value: stats.today, icon: <Calendar size={24} />, color: 'var(--gov-primary)' },
-            { title: 'Pending Approval', value: stats.pending, icon: <Clock size={24} />, color: '#eab308' },
-            { title: 'Confirmed', value: stats.confirmed, icon: <CheckCircle size={24} />, color: '#3b82f6' },
-            { title: 'Completed', value: stats.completed, icon: <Users size={24} />, color: '#10b981' },
-          ].map((stat) => (
-            <Card key={stat.title} className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                  <p className="text-3xl" style={{ color: stat.color }}>{stat.value}</p>
+        {isAdmin ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { title: 'Staff Accounts', value: adminStats.totalStaff, icon: <Users size={24} />, color: 'var(--gov-primary)' },
+              { title: 'Manager Accounts', value: adminStats.totalManagers, icon: <CheckCircle size={24} />, color: '#3b82f6' },
+              { title: 'Client Accounts', value: adminStats.totalClients, icon: <Users size={24} />, color: '#10b981' },
+              { title: 'Active Services', value: adminStats.activeServices, icon: <Calendar size={24} />, color: '#eab308' },
+            ].map((stat) => (
+              <Card key={stat.title} className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
+                    <p className="text-3xl" style={{ color: stat.color }}>{stat.value}</p>
+                  </div>
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: `${stat.color}20` }}>
+                    <div style={{ color: stat.color }}>{stat.icon}</div>
+                  </div>
                 </div>
-                <div className="p-3 rounded-lg" style={{ backgroundColor: `${stat.color}20` }}>
-                  <div style={{ color: stat.color }}>{stat.icon}</div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { title: "Today's Appointments", value: appointmentStats.today, icon: <Calendar size={24} />, color: 'var(--gov-primary)' },
+              { title: 'Pending Approval', value: appointmentStats.pending, icon: <Clock size={24} />, color: '#eab308' },
+              { title: 'Confirmed', value: appointmentStats.confirmed, icon: <CheckCircle size={24} />, color: '#3b82f6' },
+              { title: 'Completed', value: appointmentStats.completed, icon: <Users size={24} />, color: '#10b981' },
+            ].map((stat) => (
+              <Card key={stat.title} className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
+                    <p className="text-3xl" style={{ color: stat.color }}>{stat.value}</p>
+                  </div>
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: `${stat.color}20` }}>
+                    <div style={{ color: stat.color }}>{stat.icon}</div>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
 
-        {/* Pending Appointment Requests */}
+        {/* Admin: Quick Links */}
+        {isAdmin && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl text-[var(--gov-secondary)]">Account Management</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Link to="/admin/accounts">
+                  <Button variant="outline" className="w-full justify-start">Staff & Manager Accounts</Button>
+                </Link>
+                <Link to="/admin/clients">
+                  <Button variant="outline" className="w-full justify-start">Client Accounts</Button>
+                </Link>
+                <Link to="/staff">
+                  <Button variant="outline" className="w-full justify-start">Staff Management</Button>
+                </Link>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl text-[var(--gov-secondary)]">System</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Link to="/admin/audit-logs">
+                  <Button variant="outline" className="w-full justify-start">Audit Logs</Button>
+                </Link>
+                <Link to="/services">
+                  <Button variant="outline" className="w-full justify-start">Service Management</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Staff/Manager: Pending Appointment Requests */}
+        {!isAdmin && (
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle className="text-xl text-[var(--gov-secondary)]">
@@ -193,8 +278,10 @@ export function StaffDashboard() {
             )}
           </CardContent>
         </Card>
+        )}
 
-        {/* Today's Schedule */}
+        {/* Staff/Manager: Today's Schedule */}
+        {!isAdmin && (
         <Card>
           <CardHeader>
             <CardTitle className="text-xl text-[var(--gov-secondary)]">Today's Schedule</CardTitle>
@@ -230,6 +317,7 @@ export function StaffDashboard() {
             )}
           </CardContent>
         </Card>
+        )}
       </div>
     </DashboardLayout>
   );

@@ -5,7 +5,7 @@ import { supabase } from '../config/supabase';
 import { validatePasswordComplexity } from '../utils/password';
 import { UserRole } from '../types/index';
 
-const BCRYPT_ROUNDS = 12;
+const BCRYPT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret-change-in-production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '8h';
 const RESET_TOKEN_EXPIRES_MS = 60 * 60 * 1000; // 1 hour
