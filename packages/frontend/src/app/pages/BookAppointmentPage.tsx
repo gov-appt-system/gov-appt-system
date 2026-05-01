@@ -10,7 +10,7 @@ import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { appointmentAPI, serviceAPI, BackendService } from '../services/api';
+import { appointmentAPI } from '../services/api';
 import { toast } from 'sonner';
 
 type Step = 'category' | 'service' | 'datetime' | 'details';

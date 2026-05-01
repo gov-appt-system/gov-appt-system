@@ -59,7 +59,7 @@ const RESOURCE_OPTIONS = [
 
 export function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
