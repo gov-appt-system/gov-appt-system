@@ -56,14 +56,14 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
       governmentId,
     });
 
-    // Audit log after successful registration
-    await AuditLogger.logUserAction(
+    // Fire-and-forget audit log — don't block the response
+    AuditLogger.logUserAction(
       newUser.id,
       'register',
       'auth',
       { email: newUser.email },
       req.ip,
-    );
+    ).catch((err) => logger.error('Audit log failed for registration', { error: (err as Error).message }));
 
     res.status(201).json({
       id: newUser.id,
@@ -104,14 +104,14 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Audit log on successful login
-    await AuditLogger.logUserAction(
+    // Fire-and-forget audit log — don't block the response
+    AuditLogger.logUserAction(
       result.user.id,
       'login',
       'auth',
       { email: result.user.email, ip: req.ip },
       req.ip,
-    );
+    ).catch((err) => logger.error('Audit log failed for login', { error: (err as Error).message }));
 
     res.status(200).json({
       user: {
