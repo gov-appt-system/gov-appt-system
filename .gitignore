@@ -28,6 +28,7 @@ Thumbs.db
 # Test coverage
 coverage/
 
-# Agent memory Bank
-.amazonq/*
-.kiro/*
+# Agent / IDE tooling
+.amazonq/
+.kiro/
+.trunk/
