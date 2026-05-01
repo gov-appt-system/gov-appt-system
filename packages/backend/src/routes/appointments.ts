@@ -44,9 +44,9 @@ router.post(
       } = req.body;
 
       // ── Validate required fields ──────────────────────────────
-      if (!serviceId || !dateTime || !duration || !personalDetails) {
+      if (!serviceId || !dateTime || !personalDetails) {
         res.status(400).json({
-          error: 'Required fields: serviceId, dateTime, duration, personalDetails',
+          error: 'Required fields: serviceId, dateTime, personalDetails',
         });
         return;
       }
@@ -58,8 +58,6 @@ router.post(
         'phoneNumber',
         'email',
         'address',
-        'dateOfBirth',
-        'governmentId',
       ];
       const missingFields = requiredPersonalFields.filter(
         (f) => !personalDetails[f],
@@ -78,16 +76,10 @@ router.post(
         return;
       }
 
-      // Validate duration is a positive number
-      if (typeof duration !== 'number' || duration <= 0) {
-        res.status(400).json({ error: 'Duration must be a positive number (minutes)' });
-        return;
-      }
-
       // ── Verify the service exists and is active ───────────────
       const { data: service, error: serviceError } = await supabase
         .from('services')
-        .select('id, name, is_active, archived_at')
+        .select('id, name, duration, is_active, archived_at')
         .eq('id', serviceId)
         .eq('is_active', true)
         .is('archived_at', null)
@@ -98,6 +90,11 @@ router.post(
         return;
       }
 
+      // Use provided duration or fall back to the service's default duration
+      const effectiveDuration: number = (typeof duration === 'number' && duration > 0)
+        ? duration
+        : (service.duration as number) ?? 60;
+
       // ── Check slot availability (Requirement 2.1, 2.2) ───────
       const isAvailable = await checkSlotAvailability(serviceId, appointmentDateTime);
       if (!isAvailable) {
@@ -106,7 +103,7 @@ router.post(
       }
 
       // ── Reserve the slot atomically (Requirement 2.2) ─────────
-      const reserved = await reserveSlot(serviceId, appointmentDateTime, duration);
+      const reserved = await reserveSlot(serviceId, appointmentDateTime, effectiveDuration);
       if (!reserved) {
         res.status(409).json({ error: 'Failed to reserve the time slot — it may have been taken' });
         return;
@@ -123,7 +120,7 @@ router.post(
           client_id: clientId,
           service_id: serviceId,
           appointment_date_time: appointmentDateTime.toISOString(),
-          duration,
+          duration: effectiveDuration,
           status: AppointmentStatus.PENDING,
           personal_details: personalDetails,
           required_documents: requiredDocuments ?? [],
@@ -148,7 +145,7 @@ router.post(
         clientId,
         serviceId,
         dateTime: appointmentDateTime,
-        duration,
+        duration: effectiveDuration,
         status: AppointmentStatus.PENDING,
         personalDetails,
         requiredDocuments: requiredDocuments ?? [],

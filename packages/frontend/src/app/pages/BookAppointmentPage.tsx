@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import {
   ChevronRight, ChevronLeft, FileText, Shield, Heart,
-  AlertTriangle, Upload, Clipboard, ChevronDown,
+  AlertTriangle, Upload, Clipboard, ChevronDown, X, File,
 } from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { appointmentAPI } from '../services/api';
+import { appointmentAPI, serviceAPI, BackendService } from '../services/api';
 import { toast } from 'sonner';
 
 type Step = 'category' | 'service' | 'datetime' | 'details';
@@ -45,12 +45,6 @@ const SERVICE_CATEGORIES = [
       'Birth Certificate (for civil registry documents)',
       'Previous version of document (if applicable)',
     ],
-    services: [
-      'Certificate of Residency',
-      'Business Permit Request',
-      'Community Tax Certificate (Cedula)',
-      'Barangay Clearance for Business',
-    ],
   },
   {
     id: 'public-safety',
@@ -62,13 +56,6 @@ const SERVICE_CATEGORIES = [
       'Barangay Clearance',
       'Community Tax Certificate (Cedula)',
       'Passport-sized photo (2x2)',
-    ],
-    services: [
-      'Police Clearance',
-      'NBI Clearance',
-      'Barangay Clearance',
-      'Fire Safety Inspection Certificate',
-      'Certificate of No Criminal Record',
     ],
   },
   {
@@ -82,13 +69,6 @@ const SERVICE_CATEGORIES = [
       'Medical Certificate (if applicable)',
       'Proof of Income or Financial Statement',
     ],
-    services: [
-      'Medical Certificate',
-      'PWD ID / Certification',
-      'Senior Citizen ID',
-      'PhilHealth Member Data Record (MDR)',
-      'Indigency Certificate',
-    ],
   },
   {
     id: 'civil-registry',
@@ -100,13 +80,6 @@ const SERVICE_CATEGORIES = [
       'Original Birth/Marriage/Death Record',
       'Proof of relationship to the registrant',
       'Payment receipt',
-    ],
-    services: [
-      'Birth Certificate',
-      'Marriage Certificate',
-      'Death Certificate',
-      'Certificate of No Marriage (CENOMAR)',
-      'Advisory on Marriages',
     ],
   },
   {
@@ -120,13 +93,6 @@ const SERVICE_CATEGORIES = [
       'Proof of Calamity/Disaster Impact (if applicable)',
       'Family Composition Form',
     ],
-    services: [
-      'Calamity Victim Certification',
-      'Disaster Assistance Certificate',
-      'Damage Assessment Report',
-      'Relief Assistance Claim Form',
-      'Evacuation Center Certification',
-    ],
   },
 ];
 
@@ -134,11 +100,20 @@ export function BookAppointmentPage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<Step>('category');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedService, setSelectedService] = useState('');
+  const [selectedServiceId, setSelectedServiceId] = useState('');
+  const [selectedServiceName, setSelectedServiceName] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [loading, setLoading] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+
+  // Backend services fetched from API
+  const [backendServices, setBackendServices] = useState<BackendService[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(false);
+
+  // Document uploads — keyed by document name, value is the File object (optional)
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, File>>({});
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const {
     register,
@@ -146,12 +121,28 @@ export function BookAppointmentPage() {
     formState: { errors },
   } = useForm<AppointmentDetailsForm>();
 
+  // Fetch services from backend on mount
+  useEffect(() => {
+    async function loadServices() {
+      setServicesLoading(true);
+      try {
+        const svcs = await serviceAPI.getAll();
+        setBackendServices(svcs);
+      } catch {
+        // Services will fall back to category-only flow
+      } finally {
+        setServicesLoading(false);
+      }
+    }
+    loadServices();
+  }, []);
+
   // Load booked time slots when date + service are selected
   useEffect(() => {
-    if (selectedDate && selectedService) {
+    if (selectedDate && selectedServiceId) {
       const loadBookedSlots = async () => {
         try {
-          const appointments = await appointmentAPI.getAll({ serviceId: selectedService });
+          const appointments = await appointmentAPI.getAll({ serviceId: selectedServiceId });
           const bookedTimes = appointments
             .filter(apt => {
               const aptDate = new Date(apt.dateTime);
@@ -169,7 +160,7 @@ export function BookAppointmentPage() {
       };
       loadBookedSlots();
     }
-  }, [selectedDate, selectedService]);
+  }, [selectedDate, selectedServiceId]);
 
   const steps: { key: Step; label: string }[] = [
     { key: 'category', label: 'Category' },
@@ -195,10 +186,35 @@ export function BookAppointmentPage() {
   const canProceed = () => {
     switch (currentStep) {
       case 'category': return selectedCategory !== '';
-      case 'service':  return selectedService !== '';
+      case 'service':  return selectedServiceId !== '';
       case 'datetime': return selectedDate !== '' && selectedTime !== '';
       default:         return false;
     }
+  };
+
+  // Get the selected backend service to read its duration
+  const selectedBackendService = backendServices.find(s => s.id === selectedServiceId);
+
+  const handleFileUpload = (docName: string) => {
+    fileInputRefs.current[docName]?.click();
+  };
+
+  const handleFileChange = (docName: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadedFiles(prev => ({ ...prev, [docName]: file }));
+    }
+  };
+
+  const handleFileRemove = (docName: string) => {
+    setUploadedFiles(prev => {
+      const next = { ...prev };
+      delete next[docName];
+      return next;
+    });
+    // Reset the file input
+    const input = fileInputRefs.current[docName];
+    if (input) input.value = '';
   };
 
   const onSubmit = async (data: AppointmentDetailsForm) => {
@@ -217,7 +233,7 @@ export function BookAppointmentPage() {
       const lastName = lastParts.join(' ') || firstName;
 
       const appointment = await appointmentAPI.create({
-        serviceId: selectedService,
+        serviceId: selectedServiceId,
         dateTime,
         personalDetails: {
           firstName,
@@ -226,11 +242,15 @@ export function BookAppointmentPage() {
           email: data.email,
           address: data.address,
         },
+        requiredDocuments: Object.keys(uploadedFiles),
+        remarks: Object.keys(uploadedFiles).length > 0
+          ? `Documents uploaded: ${Object.keys(uploadedFiles).join(', ')}`
+          : undefined,
       });
       toast.success('Appointment booked successfully!');
       navigate(`/confirmation/${appointment.trackingNumber}`, {
         state: {
-          service: selectedService,
+          service: selectedServiceName,
           date: selectedDate,
           time: selectedTime,
           trackingNumber: appointment.trackingNumber,
@@ -267,6 +287,27 @@ export function BookAppointmentPage() {
   };
 
   const selectedCategoryData = SERVICE_CATEGORIES.find(c => c.id === selectedCategory);
+
+  // Filter backend services by selected category (match by department)
+  // Map category IDs to department names for matching
+  const categoryToDepartment: Record<string, string[]> = {
+    'certifications': ['Certifications', 'Documents', 'General'],
+    'public-safety': ['Public Safety', 'Police', 'Fire'],
+    'health-social': ['Health', 'Social Welfare', 'DSWD'],
+    'civil-registry': ['Civil Registry', 'PSA'],
+    'community': ['Disaster', 'Community', 'DRRM'],
+  };
+
+  // Get services for the selected category — use backend services if available, otherwise show category name as a single option
+  const servicesForCategory = backendServices.length > 0
+    ? backendServices.filter(s => {
+        const depts = categoryToDepartment[selectedCategory] ?? [];
+        return depts.some(d => s.department.toLowerCase().includes(d.toLowerCase()));
+      })
+    : [];
+
+  // If no backend services match the category, show all backend services as fallback
+  const displayServices = servicesForCategory.length > 0 ? servicesForCategory : backendServices;
 
   // Breadcrumb shown on service + confirm steps
   const Breadcrumb = () => (
@@ -368,71 +409,87 @@ export function BookAppointmentPage() {
           </Card>
         )}
 
-        {/* ── STEP 2: Select Service (expands inline to show required docs) ── */}
+        {/* ── STEP 2: Select Service ── */}
         {currentStep === 'service' && (
           <Card className="p-8">
             <Breadcrumb />
             <h2 className="text-xl font-semibold text-[var(--gov-secondary)] mb-6">
               Select a Service
             </h2>
-            <div className="space-y-3">
-              {selectedCategoryData?.services.map(serviceName => {
-                const isSelected = selectedService === serviceName;
-                return (
-                  <div
-                    key={serviceName}
-                    className={`rounded-xl border-2 overflow-hidden transition-all ${
-                      isSelected ? 'border-[var(--gov-primary)]' : 'border-gray-200 hover:border-[var(--gov-primary)]/50'
-                    }`}
-                  >
-                    {/* Card header row */}
-                    <button
-                      onClick={() => setSelectedService(serviceName)}
-                      className="w-full text-left flex items-center focus:outline-none"
-                    >
-                      {/* Left accent bar */}
-                      <div className={`w-1 self-stretch flex-shrink-0 ${
-                        isSelected ? 'bg-[var(--gov-primary)]' : 'bg-gray-200'
-                      }`} />
-                      <div className="flex-1 px-5 py-4">
-                        <p className={`font-medium ${isSelected ? 'text-[var(--gov-primary)]' : 'text-[var(--gov-secondary)]'}`}>
-                          {serviceName}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">Government service request</p>
-                      </div>
-                      <div className="pr-4">
-                        {isSelected ? (
-                          <div className="w-5 h-5 rounded-full bg-[var(--gov-primary)] flex items-center justify-center">
-                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          </div>
-                        ) : (
-                          <ChevronDown size={16} className="text-gray-400" />
-                        )}
-                      </div>
-                    </button>
 
-                    {/* Inline expanded: required documents */}
-                    {isSelected && selectedCategoryData && (
-                      <div className="mx-4 mb-4 rounded-lg bg-yellow-50 border border-yellow-200 p-4">
-                        <p className="text-xs font-semibold text-yellow-800 mb-2 uppercase tracking-wide">
-                          Required documents:
-                        </p>
-                        <ul className="space-y-1">
-                          {selectedCategoryData.requiredDocuments.map((doc, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm text-yellow-900">
-                              <span className="mt-1 w-1.5 h-1.5 rounded-full bg-yellow-600 flex-shrink-0" />
-                              {doc}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            {servicesLoading ? (
+              <p className="text-gray-500 text-sm">Loading services...</p>
+            ) : displayServices.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-2">No services are currently available for this category.</p>
+                <p className="text-xs text-gray-400">Services need to be created by a manager first.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {displayServices.map(service => {
+                  const isSelected = selectedServiceId === service.id;
+                  return (
+                    <div
+                      key={service.id}
+                      className={`rounded-xl border-2 overflow-hidden transition-all ${
+                        isSelected ? 'border-[var(--gov-primary)]' : 'border-gray-200 hover:border-[var(--gov-primary)]/50'
+                      }`}
+                    >
+                      <button
+                        onClick={() => {
+                          setSelectedServiceId(service.id);
+                          setSelectedServiceName(service.name);
+                        }}
+                        className="w-full text-left flex items-center focus:outline-none"
+                      >
+                        <div className={`w-1 self-stretch flex-shrink-0 ${
+                          isSelected ? 'bg-[var(--gov-primary)]' : 'bg-gray-200'
+                        }`} />
+                        <div className="flex-1 px-5 py-4">
+                          <p className={`font-medium ${isSelected ? 'text-[var(--gov-primary)]' : 'text-[var(--gov-secondary)]'}`}>
+                            {service.name}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {service.department} · {service.duration} min
+                          </p>
+                        </div>
+                        <div className="pr-4">
+                          {isSelected ? (
+                            <div className="w-5 h-5 rounded-full bg-[var(--gov-primary)] flex items-center justify-center">
+                              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          ) : (
+                            <ChevronDown size={16} className="text-gray-400" />
+                          )}
+                        </div>
+                      </button>
+
+                      {/* Inline expanded: required documents */}
+                      {isSelected && selectedCategoryData && (
+                        <div className="mx-4 mb-4 rounded-lg bg-yellow-50 border border-yellow-200 p-4">
+                          <p className="text-xs font-semibold text-yellow-800 mb-2 uppercase tracking-wide">
+                            Required documents (for reference):
+                          </p>
+                          <ul className="space-y-1">
+                            {(service.requiredDocuments.length > 0
+                              ? service.requiredDocuments
+                              : selectedCategoryData.requiredDocuments
+                            ).map((doc, i) => (
+                              <li key={i} className="flex items-start gap-2 text-sm text-yellow-900">
+                                <span className="mt-1 w-1.5 h-1.5 rounded-full bg-yellow-600 flex-shrink-0" />
+                                {doc}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             <div className="flex justify-between mt-8">
               <Button variant="outline" onClick={handleBack} className="min-w-[100px]">
@@ -449,7 +506,7 @@ export function BookAppointmentPage() {
           </Card>
         )}
 
-        {/* ── STEP 4: Date & Time ── */}
+        {/* ── STEP 3: Date & Time ── */}
         {currentStep === 'datetime' && (
           <Card className="p-8 space-y-8">
             <div>
@@ -599,37 +656,74 @@ export function BookAppointmentPage() {
                 </div>
               </div>
 
-              {/* Required Documents */}
+              {/* Required Documents — optional upload */}
               {selectedCategoryData && (
                 <div>
-                  <h2 className="text-xl font-semibold text-[var(--gov-secondary)] mb-5">
-                    Required documents for {selectedService}
+                  <h2 className="text-xl font-semibold text-[var(--gov-secondary)] mb-2">
+                    Supporting Documents
                   </h2>
+                  <p className="text-sm text-gray-500 mb-5">
+                    Upload is optional. You may bring physical copies to your appointment instead.
+                  </p>
                   <div className="rounded-xl border border-gray-200 overflow-hidden">
-                    {selectedCategoryData.requiredDocuments.map((doc, i) => (
-                      <div
-                        key={i}
-                        className={`flex items-center justify-between px-5 py-3.5 ${
-                          i < selectedCategoryData.requiredDocuments.length - 1
-                            ? 'border-b border-gray-100'
-                            : ''
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 text-sm text-gray-700">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--gov-primary)] flex-shrink-0" />
-                          {doc}
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-1.5 text-xs border-gray-300 text-gray-600 hover:border-[var(--gov-primary)] hover:text-[var(--gov-primary)]"
+                    {(selectedBackendService?.requiredDocuments?.length
+                      ? selectedBackendService.requiredDocuments
+                      : selectedCategoryData.requiredDocuments
+                    ).map((doc, i, arr) => {
+                      const uploaded = uploadedFiles[doc];
+                      return (
+                        <div
+                          key={i}
+                          className={`flex items-center justify-between px-5 py-3.5 ${
+                            i < arr.length - 1 ? 'border-b border-gray-100' : ''
+                          }`}
                         >
-                          <Upload size={13} />
-                          Upload
-                        </Button>
-                      </div>
-                    ))}
+                          <div className="flex items-center gap-3 text-sm text-gray-700 flex-1 min-w-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--gov-primary)] flex-shrink-0" />
+                            <span className="truncate">{doc}</span>
+                          </div>
+
+                          {/* Hidden file input */}
+                          <input
+                            type="file"
+                            accept="image/*,.pdf,.doc,.docx"
+                            className="hidden"
+                            ref={el => { fileInputRefs.current[doc] = el; }}
+                            onChange={e => handleFileChange(doc, e)}
+                          />
+
+                          {uploaded ? (
+                            <div className="flex items-center gap-2 ml-3">
+                              <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-1 rounded">
+                                <File size={12} />
+                                {uploaded.name.length > 20
+                                  ? uploaded.name.slice(0, 17) + '...'
+                                  : uploaded.name}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleFileRemove(doc)}
+                                className="text-gray-400 hover:text-red-500 transition-colors"
+                                aria-label={`Remove ${doc}`}
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleFileUpload(doc)}
+                              className="flex items-center gap-1.5 text-xs border-gray-300 text-gray-600 hover:border-[var(--gov-primary)] hover:text-[var(--gov-primary)] ml-3"
+                            >
+                              <Upload size={13} />
+                              Upload
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -644,7 +738,7 @@ export function BookAppointmentPage() {
                   </div>
                   <div>
                     <span className="text-gray-500">Service</span>
-                    <p className="font-medium text-[var(--gov-secondary)]">{selectedService}</p>
+                    <p className="font-medium text-[var(--gov-secondary)]">{selectedServiceName}</p>
                   </div>
                   <div>
                     <span className="text-gray-500">Date</span>
@@ -656,6 +750,12 @@ export function BookAppointmentPage() {
                     <span className="text-gray-500">Time</span>
                     <p className="font-medium text-[var(--gov-secondary)]">{selectedTime}</p>
                   </div>
+                  {Object.keys(uploadedFiles).length > 0 && (
+                    <div className="col-span-2">
+                      <span className="text-gray-500">Documents uploaded</span>
+                      <p className="font-medium text-[var(--gov-secondary)]">{Object.keys(uploadedFiles).length} file(s)</p>
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -4,6 +4,9 @@
 .env.*.local
 .env.example
 
+# Database schema (sensitive — applied via Supabase Dashboard)
+packages/backend/src/db/schema/
+
 # Dependencies
 node_modules/
 
