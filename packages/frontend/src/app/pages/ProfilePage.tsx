@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 import { useAuth } from '../context/AuthContext';
+import { profileAPI } from '../services/api';
 import { toast } from 'sonner';
 
 interface ProfileFormData {
@@ -97,8 +98,12 @@ export function ProfilePage() {
   const onUpdateProfile = async (data: ProfileFormData) => {
     setUpdating(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await profileAPI.update({
+        first_name: data.fullName.split(' ')[0],
+        last_name: data.fullName.split(' ').slice(1).join(' '),
+        phone_number: data.phone,
+        address: data.address,
+      });
       toast.success('Profile updated successfully!');
       setIsEditing(false);
     } catch (error) {
@@ -111,13 +116,13 @@ export function ProfilePage() {
   const onChangePassword = async (data: PasswordFormData) => {
     setChangingPassword(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await profileAPI.changePassword(data.currentPassword, data.newPassword);
       toast.success('Password changed successfully!');
       reset();
       setShowPasswordModal(false);
-    } catch (error) {
-      toast.error('Failed to change password');
+    } catch (error: any) {
+      const message = error?.response?.data?.error || 'Failed to change password';
+      toast.error(message);
     } finally {
       setChangingPassword(false);
     }

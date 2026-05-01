@@ -25,19 +25,19 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 import { StatusBadge } from '../components/StatusBadge';
-import { appointmentAPI, Appointment } from '../services/api';
+import { appointmentAPI, BackendAppointment } from '../services/api';
 import { toast } from 'sonner';
 
 export function MyAppointmentsPage() {
   const navigate = useNavigate();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<BackendAppointment[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<BackendAppointment | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
-  const [appointmentToAction, setAppointmentToAction] = useState<Appointment | null>(null);
+  const [appointmentToAction, setAppointmentToAction] = useState<BackendAppointment | null>(null);
 
   // Load appointments on mount
   useEffect(() => {
@@ -56,7 +56,7 @@ export function MyAppointmentsPage() {
 
   const filteredAppointments = appointments.filter(apt => {
     const matchesSearch = apt.trackingNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         apt.service.toLowerCase().includes(searchTerm.toLowerCase());
+                         apt.serviceId.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || apt.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
@@ -65,7 +65,7 @@ export function MyAppointmentsPage() {
     if (!appointmentToAction) return;
     
     try {
-      await appointmentAPI.updateStatus(appointmentToAction.id, 'cancelled');
+      await appointmentAPI.update(appointmentToAction.id, { status: 'cancelled' });
       setAppointments(prev => 
         prev.map(apt => apt.id === appointmentToAction.id ? { ...apt, status: 'cancelled' as const } : apt)
       );
@@ -141,12 +141,14 @@ export function MyAppointmentsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAppointments.map(appointment => (
+                  {filteredAppointments.map(appointment => {
+                    const aptDate = new Date(appointment.dateTime);
+                    return (
                     <tr key={appointment.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4 text-sm">{appointment.trackingNumber}</td>
-                      <td className="py-3 px-4 text-sm">{appointment.service}</td>
-                      <td className="py-3 px-4 text-sm">{new Date(appointment.date).toLocaleDateString()}</td>
-                      <td className="py-3 px-4 text-sm">{appointment.time}</td>
+                      <td className="py-3 px-4 text-sm">{appointment.serviceId}</td>
+                      <td className="py-3 px-4 text-sm">{aptDate.toLocaleDateString()}</td>
+                      <td className="py-3 px-4 text-sm">{aptDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</td>
                       <td className="py-3 px-4">
                         <StatusBadge status={appointment.status} />
                       </td>
@@ -189,7 +191,8 @@ export function MyAppointmentsPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
 
@@ -220,7 +223,7 @@ export function MyAppointmentsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-600">Service</p>
-                    <p className="text-[var(--gov-secondary)]">{selectedAppointment.service}</p>
+                    <p className="text-[var(--gov-secondary)]">{selectedAppointment.serviceId}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Status</p>
@@ -230,21 +233,17 @@ export function MyAppointmentsPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600">Date</p>
+                    <p className="text-sm text-gray-600">Date & Time</p>
                     <p className="text-[var(--gov-secondary)]">
-                      {new Date(selectedAppointment.date).toLocaleDateString()}
+                      {new Date(selectedAppointment.dateTime).toLocaleString()}
                     </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Time</p>
-                    <p className="text-[var(--gov-secondary)]">{selectedAppointment.time}</p>
                   </div>
                 </div>
 
-                {selectedAppointment.notes && (
+                {selectedAppointment.remarks && (
                   <div>
-                    <p className="text-sm text-gray-600">Notes</p>
-                    <p className="text-gray-700">{selectedAppointment.notes}</p>
+                    <p className="text-sm text-gray-600">Remarks</p>
+                    <p className="text-gray-700">{selectedAppointment.remarks}</p>
                   </div>
                 )}
 
@@ -288,10 +287,10 @@ export function MyAppointmentsPage() {
                       <strong>Tracking Number:</strong> {appointmentToAction.trackingNumber}
                     </p>
                     <p className="text-sm text-gray-700">
-                      <strong>Service:</strong> {appointmentToAction.service}
+                      <strong>Service:</strong> {appointmentToAction.serviceId}
                     </p>
                     <p className="text-sm text-gray-700">
-                      <strong>Date:</strong> {new Date(appointmentToAction.date).toLocaleDateString()} at {appointmentToAction.time}
+                      <strong>Date:</strong> {new Date(appointmentToAction.dateTime).toLocaleString()}
                     </p>
                   </div>
                 )}
@@ -326,7 +325,7 @@ export function MyAppointmentsPage() {
                 {appointmentToAction && (
                   <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                     <p className="text-sm text-gray-700">
-                      <strong>Current Date:</strong> {new Date(appointmentToAction.date).toLocaleDateString()} at {appointmentToAction.time}
+                      <strong>Current Date:</strong> {new Date(appointmentToAction.dateTime).toLocaleString()}
                     </p>
                   </div>
                 )}

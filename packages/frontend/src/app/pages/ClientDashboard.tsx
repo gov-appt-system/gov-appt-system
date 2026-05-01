@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Card } from '../components/ui/card';
 import { StatusBadge } from '../components/StatusBadge';
-import { appointmentAPI, Appointment } from '../services/api';
+import { appointmentAPI, BackendAppointment } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const MONTH_NAMES = [
@@ -19,7 +19,7 @@ const MONTH_SHORT = [
 
 export function ClientDashboard() {
   const { user } = useAuth();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<BackendAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [calendarDate, setCalendarDate] = useState(new Date());
 
@@ -46,7 +46,7 @@ export function ClientDashboard() {
 
   const appointmentDates = new Set(
     appointments.map(a => {
-      const d = new Date(a.date);
+      const d = new Date(a.dateTime);
       return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
     })
   );
@@ -85,7 +85,7 @@ export function ClientDashboard() {
             ) : (
               <div className="space-y-3">
                 {appointments.slice(0, 3).map(appointment => {
-                  const aptDate = new Date(appointment.date);
+                  const aptDate = new Date(appointment.dateTime);
                   return (
                     <div
                       key={appointment.id}
@@ -106,7 +106,7 @@ export function ClientDashboard() {
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <div>
                             <h3 className="text-sm font-medium text-[var(--gov-secondary)]">
-                              {appointment.service}
+                              {appointment.serviceId}
                             </h3>
                             <p className="text-xs text-gray-400">{appointment.trackingNumber}</p>
                           </div>
@@ -115,13 +115,11 @@ export function ClientDashboard() {
                         <div className="flex items-center gap-3 text-xs text-gray-500 mt-2">
                           <span className="flex items-center gap-1">
                             <Clock size={12} />
-                            {appointment.time}
+                            {aptDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           <span className="flex items-center gap-1">
                             <MapPin size={12} />
-                            {'location' in appointment
-                              ? (appointment as any).location
-                              : 'Pasay City'}
+                            Pasay City
                           </span>
                         </div>
                       </div>
