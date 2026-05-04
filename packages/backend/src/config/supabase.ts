@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { logger } from './logger';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -15,3 +16,17 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseServic
     persistSession: false,
   },
 });
+
+// Wake up the Supabase database on startup so the first real request
+// doesn't hit a cold-start delay (free-tier projects pause after inactivity).
+(async () => {
+  try {
+    const start = Date.now();
+    await supabase.from('users').select('id').limit(1);
+    logger.info(`Supabase warm-up completed in ${Date.now() - start}ms`);
+  } catch (err) {
+    logger.warn('Supabase warm-up query failed — first request may be slow', {
+      error: (err as Error).message,
+    });
+  }
+})();

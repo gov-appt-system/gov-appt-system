@@ -43,6 +43,7 @@ const STATUS_FLOW = ['pending', 'confirmed', 'completed'] as const;
 const TERMINAL_STATUSES: Record<string, { label: string; description: string }> = {
   cancelled: { label: 'Cancelled', description: 'Appointment was cancelled' },
   no_show: { label: 'No Show', description: 'Client did not attend the appointment' },
+  expired: { label: 'Expired', description: 'Appointment expired — not confirmed before scheduled time' },
 };
 
 const STATUS_META: Record<string, { label: string; description: string }> = {
@@ -67,6 +68,8 @@ function getStatusIcon(status: string, reached: boolean) {
       return <XCircle size={size} className={iconClass} />;
     case 'no_show':
       return <UserX size={size} className={iconClass} />;
+    case 'expired':
+      return <AlertCircle size={size} className={iconClass} />;
     default:
       return <AlertCircle size={size} className={iconClass} />;
   }
@@ -86,6 +89,8 @@ function getStatusBgColor(status: string, reached: boolean): string {
       return 'bg-red-500';
     case 'no_show':
       return 'bg-orange-500';
+    case 'expired':
+      return 'bg-rose-600';
     default:
       return 'bg-gray-500';
   }
@@ -98,6 +103,7 @@ function getStatusBadgeVariant(status: string): 'default' | 'secondary' | 'destr
       return 'default';
     case 'cancelled':
     case 'no_show':
+    case 'expired':
       return 'destructive';
     case 'pending':
       return 'secondary';

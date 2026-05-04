@@ -73,7 +73,7 @@ export interface BackendAppointment {
   serviceId: string;
   dateTime: string;
   duration: number;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'expired';
   personalDetails: {
     firstName: string;
     lastName: string;
@@ -491,3 +491,42 @@ export const profileAPI = {
 };
 
 export default apiClient;
+
+// ── Notification Types ──────────────────────────────────────
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  read: boolean;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}
+
+// ── Notification API ────────────────────────────────────────
+
+export const notificationAPI = {
+  /** GET /api/notifications — list notifications for current user */
+  getAll: async (params?: { unreadOnly?: boolean; limit?: number }): Promise<AppNotification[]> => {
+    const { data } = await apiClient.get<AppNotification[]>('/notifications', { params });
+    return data;
+  },
+
+  /** GET /api/notifications/unread-count */
+  getUnreadCount: async (): Promise<number> => {
+    const { data } = await apiClient.get<{ count: number }>('/notifications/unread-count');
+    return data.count;
+  },
+
+  /** PUT /api/notifications/:id/read */
+  markAsRead: async (id: string): Promise<void> => {
+    await apiClient.put(`/notifications/${id}/read`);
+  },
+
+  /** PUT /api/notifications/read-all */
+  markAllAsRead: async (): Promise<void> => {
+    await apiClient.put('/notifications/read-all');
+  },
+};

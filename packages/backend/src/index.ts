@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import authRouter from './routes/auth';
@@ -5,8 +6,10 @@ import profileRouter from './routes/profile';
 import servicesRouter from './routes/services';
 import assignmentsRouter from './routes/assignments';
 import appointmentsRouter from './routes/appointments';
+import notificationsRouter from './routes/notifications';
 import adminRouter from './routes/admin';
 import { logger } from './config/logger';
+import { startExpiryScheduler } from './services/scheduler';
 
 const app: Express = express();
 const PORT = process.env.PORT ?? 3000;
@@ -47,6 +50,7 @@ app.use('/api/profile', profileRouter);
 app.use('/api/services', servicesRouter);
 app.use('/api/services/:id/assignments', assignmentsRouter);
 app.use('/api/appointments', appointmentsRouter);
+app.use('/api/notifications', notificationsRouter);
 app.use('/api/admin', adminRouter);
 
 // Global error handling middleware
@@ -57,6 +61,7 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 app.listen(PORT, () => {
   console.log(`Backend running on port ${PORT}`);
+  startExpiryScheduler();
 });
 
 export default app;

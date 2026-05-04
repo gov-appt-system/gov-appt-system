@@ -1,5 +1,5 @@
 interface StatusBadgeProps {
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'expired';
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {
@@ -9,6 +9,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     completed: 'bg-blue-100 text-blue-800',
     cancelled: 'bg-red-100 text-red-800',
     no_show: 'bg-orange-100 text-orange-800',
+    expired: 'bg-rose-100 text-rose-800',
   };
 
   const labels: Record<string, string> = {
@@ -17,6 +18,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     completed: 'Completed',
     cancelled: 'Cancelled',
     no_show: 'No Show',
+    expired: 'Expired',
   };
 
   return (

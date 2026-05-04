@@ -15,6 +15,24 @@ export enum AppointmentStatus {
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
   NO_SHOW = 'no_show',
+  EXPIRED = 'expired',
+}
+
+// ============================================================
+// Notification Models
+// ============================================================
+
+export type NotificationType = 'info' | 'success' | 'warning' | 'error';
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  read: boolean;
+  metadata: Record<string, unknown>;
+  createdAt: Date;
 }
 
 // ============================================================

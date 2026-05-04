@@ -5,6 +5,8 @@ import { AuditLogger } from '../services/audit';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { checkSlotAvailability, reserveSlot, isWithinServiceHours } from '../services/calendar';
 import { sendBookingConfirmation, sendStatusUpdate } from '../services/notification';
+import { createNotification } from '../services/inAppNotification';
+import { expireStaleRows } from '../services/scheduler';
 import { generateTrackingNumber } from '../utils/tracking';
 import { UserRole, AppointmentStatus } from '../types';
 import { logger } from '../config/logger';
@@ -94,6 +96,36 @@ router.post(
       const effectiveDuration: number = (typeof duration === 'number' && duration > 0)
         ? duration
         : (service.duration as number) ?? 60;
+
+      // ── Validate service hours (Requirement 3.3) ──────────────
+      const withinHours = await isWithinServiceHours(serviceId, appointmentDateTime);
+      if (!withinHours) {
+        res.status(400).json({
+          error: 'The requested time is outside of the service operating hours',
+        });
+        return;
+      }
+
+      // ── Validate appointment does not exceed service end time ──
+      const { data: svcHours, error: hoursError } = await supabase
+        .from('services')
+        .select('end_time')
+        .eq('id', serviceId)
+        .single();
+
+      if (!hoursError && svcHours) {
+        const [endH, endM] = (svcHours.end_time as string).split(':').map(Number);
+        const serviceEndMinutes = endH * 60 + endM;
+        const apptStartMinutes = appointmentDateTime.getUTCHours() * 60 + appointmentDateTime.getUTCMinutes();
+        const apptEndMinutes = apptStartMinutes + effectiveDuration;
+
+        if (apptEndMinutes > serviceEndMinutes) {
+          res.status(400).json({
+            error: 'The appointment duration exceeds the service operating hours. Please choose an earlier time slot or reduce the duration.',
+          });
+          return;
+        }
+      }
 
       // ── Check slot availability (Requirement 2.1, 2.2) ───────
       const isAvailable = await checkSlotAvailability(serviceId, appointmentDateTime);
@@ -303,8 +335,13 @@ router.get(
         return;
       }
 
+      // ── Inline expiry: transition stale appointments on read ──
+      const freshRows = await expireStaleRows(
+        (appointments ?? []) as Record<string, unknown>[],
+      );
+
       // ── Map snake_case DB columns to camelCase response ───────
-      const mapped = (appointments ?? []).map((row: Record<string, unknown>) =>
+      const mapped = freshRows.map((row: Record<string, unknown>) =>
         mapAppointmentRow(row),
       );
 
@@ -382,7 +419,10 @@ router.get(
         return;
       }
 
-      res.json(mapAppointmentRow(appointment as Record<string, unknown>));
+      // ── Inline expiry check ───────────────────────────────────
+      const [freshRow] = await expireStaleRows([appointment as Record<string, unknown>]);
+
+      res.json(mapAppointmentRow(freshRow));
     } catch (err) {
       const error = err as Error;
       logger.error('GET /api/appointments/track/:trackingNumber failed', {
@@ -472,7 +512,10 @@ router.get(
         }
       }
 
-      res.json(mapAppointmentRow(appointment as Record<string, unknown>));
+      // ── Inline expiry check ───────────────────────────────────
+      const [freshRow] = await expireStaleRows([appointment as Record<string, unknown>]);
+
+      res.json(mapAppointmentRow(freshRow));
     } catch (err) {
       const error = err as Error;
       logger.error('GET /api/appointments/:id failed', { error: error.message });
@@ -486,7 +529,7 @@ router.get(
  * Terminal statuses (completed, cancelled, no_show) allow no further transitions.
  */
 const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
-  [AppointmentStatus.PENDING]: [AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED],
+  [AppointmentStatus.PENDING]: [AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED, AppointmentStatus.EXPIRED],
   [AppointmentStatus.CONFIRMED]: [
     AppointmentStatus.COMPLETED,
     AppointmentStatus.CANCELLED,
@@ -495,6 +538,7 @@ const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
   [AppointmentStatus.COMPLETED]: [],
   [AppointmentStatus.CANCELLED]: [],
   [AppointmentStatus.NO_SHOW]: [],
+  [AppointmentStatus.EXPIRED]: [],
 };
 
 /** Terminal statuses that trigger soft-archive (Requirement 3.6). */
@@ -502,6 +546,7 @@ const TERMINAL_STATUSES: string[] = [
   AppointmentStatus.COMPLETED,
   AppointmentStatus.CANCELLED,
   AppointmentStatus.NO_SHOW,
+  AppointmentStatus.EXPIRED,
 ];
 
 /**
@@ -683,11 +728,48 @@ router.put(
           processedBy: updated.processed_by as string,
         };
 
+        // Email notification (fire-and-forget)
         sendStatusUpdate(
           appointmentForEmail,
           currentStatus as AppointmentStatus,
         ).catch((err) => {
           logger.error('PUT /api/appointments/:id: email send failed', {
+            error: (err as Error).message,
+            appointmentId: id,
+          });
+        });
+
+        // In-app notification for the client
+        const statusLabels: Record<string, string> = {
+          confirmed: 'Confirmed',
+          completed: 'Completed',
+          cancelled: 'Cancelled',
+          no_show: 'No Show',
+          expired: 'Expired',
+        };
+        const notifTypeMap: Record<string, 'success' | 'info' | 'warning' | 'error'> = {
+          confirmed: 'success',
+          completed: 'info',
+          cancelled: 'warning',
+          no_show: 'warning',
+          expired: 'error',
+        };
+
+        const label = statusLabels[newStatus] ?? newStatus;
+        const notifType = notifTypeMap[newStatus] ?? 'info';
+
+        createNotification(
+          updated.client_id as string,
+          `Appointment ${label}`,
+          `Your appointment (${updated.tracking_number}) has been ${label.toLowerCase()} by staff.`,
+          notifType,
+          {
+            appointmentId: id,
+            trackingNumber: updated.tracking_number,
+            newStatus,
+          },
+        ).catch((err) => {
+          logger.error('PUT /api/appointments/:id: in-app notification failed', {
             error: (err as Error).message,
             appointmentId: id,
           });

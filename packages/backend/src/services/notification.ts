@@ -78,6 +78,7 @@ function baseTemplate(title: string, body: string): string {
     .badge-completed { background: #cfe2ff; color: #084298; }
     .badge-cancelled { background: #f8d7da; color: #842029; }
     .badge-no_show   { background: #e2e3e5; color: #41464b; }
+    .badge-expired   { background: #fde2e2; color: #991b1b; }
     table { width: 100%; border-collapse: collapse; margin: 16px 0; }
     td { padding: 8px 0; vertical-align: top; }
     td:first-child { font-weight: bold; width: 40%; color: #555; }
@@ -176,6 +177,7 @@ export async function sendStatusUpdate(
     [AppointmentStatus.COMPLETED]: 'Your appointment has been marked as <strong>completed</strong>. Thank you for visiting.',
     [AppointmentStatus.CANCELLED]: 'Your appointment has been <strong>cancelled</strong>. Please contact us if you have questions.',
     [AppointmentStatus.NO_SHOW]: 'Your appointment was marked as <strong>no-show</strong>. Please rebook if needed.',
+    [AppointmentStatus.EXPIRED]: 'Your appointment has <strong>expired</strong> because it was not confirmed before the scheduled time. Please book a new appointment if needed.',
   };
 
   const message = statusMessages[status] ?? `Your appointment status has been updated from <em>${oldStatus}</em> to <em>${status}</em>.`;

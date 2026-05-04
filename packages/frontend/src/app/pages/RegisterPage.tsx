@@ -5,6 +5,7 @@ import { Building2, Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import axios from 'axios';
 import { authAPI } from '../services/api';
 import { toast } from 'sonner';
 
@@ -74,8 +75,12 @@ export function RegisterPage() {
       toast.success('Registration successful! Please sign in.');
       navigate('/login');
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Registration failed. Please try again.';
+      let message = 'Registration failed. Please try again.';
+      if (axios.isAxiosError(err) && err.response?.data?.error) {
+        message = err.response.data.error;
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
       setError(message);
       toast.error(message);
     }
