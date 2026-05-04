@@ -42,6 +42,9 @@ importers:
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.3
+      node-cron:
+        specifier: ^4.2.1
+        version: 4.2.1
       resend:
         specifier: ^3.2.0
         version: 3.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -64,6 +67,9 @@ importers:
       '@types/node':
         specifier: ^20.11.0
         version: 20.19.37
+      '@types/node-cron':
+        specifier: ^3.0.11
+        version: 3.0.11
       fast-check:
         specifier: ^3.15.0
         version: 3.23.2
@@ -1587,6 +1593,9 @@ packages:
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
 
+  '@types/node-cron@3.0.11':
+    resolution: {integrity: sha512-0ikrnug3/IyneSHqCBeslAhlK2aBfYek1fGo4bP4QnZPmiqSGRK+Oy7ZMisLWkesffJvQ1cqAcBnJC+8+nxIAg==}
+
   '@types/node@20.19.37':
     resolution: {integrity: sha512-8kzdPJ3FsNsVIurqBs7oodNnCEVbni9yUEkaHbgptDACOPW04jimGagZ51E6+lXUwJjgnBw+hyko/lkFWCldqw==}
 
@@ -2558,6 +2567,10 @@ packages:
     peerDependencies:
       react: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
       react-dom: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
+
+  node-cron@4.2.1:
+    resolution: {integrity: sha512-lgimEHPE/QDgFlywTd8yTR61ptugX3Qer29efeyWw2rv259HtGBNn1vZVmp8lB9uo9wC0t/AT4iGqXxia+CJFg==}
+    engines: {node: '>=6.0.0'}
 
   node-releases@2.0.36:
     resolution: {integrity: sha512-TdC8FSgHz8Mwtw9g5L4gR/Sh9XhSP/0DEkQxfEFXOpiul5IiHgHan2VhYYb6agDSfp4KuvltmGApc8HMgUrIkA==}
@@ -4518,6 +4531,8 @@ snapshots:
 
   '@types/ms@2.1.0': {}
 
+  '@types/node-cron@3.0.11': {}
+
   '@types/node@20.19.37':
     dependencies:
       undici-types: 6.21.0
@@ -5487,6 +5502,8 @@ snapshots:
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  node-cron@4.2.1: {}
 
   node-releases@2.0.36: {}
 
